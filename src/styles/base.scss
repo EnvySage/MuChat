@@ -1,0 +1,112 @@
+// 第1张图：滚动条样式 + CSS变量 + body基础样式
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgb(239, 239, 239);
+    border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #bfbfbf;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #bfbfbf;
+}
+
+::-webkit-scrollbar-corner {
+    background: #bfbfbf;
+}
+
+:root {
+    --link: #007fff;    // 链接色（蓝）
+    --pink: #FF6699;    // 粉色
+    --text2: #61666d;   // 次要文本色（灰）
+    --icon: #9499a0;    // 图标色（浅灰）
+
+    --color-primary:#557afd;
+    --color-secondary:#03a9e9;
+    --color-third:#88bbeb;
+    --color-last:#cdf0fe;
+}
+
+// 添加全局高度和宽度设置
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+    padding: 0px;
+    margin: 0px;
+}
+
+
+// 第2张图：全局重置 + 基础组件样式
+body {
+    padding: 0px;
+    margin: 0px;
+    font-size: 14px;
+    color: #636d7e; // 主文本色（深灰蓝）
+}
+
+* { 
+    box-sizing: border-box; 
+    padding: 0; 
+    border: 0; 
+    outline: 0; 
+    vertical-align: middle; 
+} 
+
+.a-link {
+    text-decoration: none; 
+    color: var(--link); // 引用:root中的--link变量
+    cursor: pointer; 
+}
+
+.el-form-item {
+    align-items: center; // 表单元素垂直居中
+}
+
+.container-body {
+    margin: 0px auto; 
+    padding-top: 5px; 
+}
+
+
+// 第3张图：补充全局样式 + 按钮图标间距
+* {
+    box-sizing: border-box;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    vertical-align: middle;
+}
+
+.a-link {
+    text-decoration: none;
+    color: var(--link);
+    cursor: pointer;
+}
+
+.el-form-item {
+    align-items: center;
+}
+
+.container-body {
+    margin: 0px auto;
+    padding-top: 5px;
+}
+
+// 按钮内图标间距（嵌套语法）
+.el-button {
+    .iconfont::before {
+        margin-right: 5px; // 图标与文字间距
+    }
+}

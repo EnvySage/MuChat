@@ -1,0 +1,25 @@
+@import url(base.scss);
+@import url(//at.alicdn.com/t/c/font_5134667_z0wjc3woopc.css);
+
+.el-scrollbar {
+  &__thumb {
+    background-color: white !important; // 或者使用其他颜色
+    border-radius: 4px;
+    
+    &:hover {
+      background-color: #b3b3b3 !important;
+    }
+  }
+  
+  &__bar {
+    border-radius: 4px;
+    
+    &:horizontal {
+      height: 6px;
+    }
+    
+    &:vertical {
+      width: 6px;
+    }
+  }
+}
