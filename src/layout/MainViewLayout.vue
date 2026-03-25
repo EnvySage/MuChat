@@ -9,8 +9,8 @@
                 <ChatView />
             </div>
             <div class="layout-content-right">
-                <!-- <UserList /> -->
-                 <UserInfo />
+                <UserInfo />
+                <UserList />
             </div>
         </div>
         <div class="layout-footer"></div>
@@ -46,7 +46,9 @@ import UserInfo from '@/components/UserInfo.vue';
     .layout-content-right{
         width: 230px;
         height: 100%;
-        border: 1px solid red;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     }
 }
 </style>

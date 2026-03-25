@@ -26,10 +26,11 @@
 
 <script setup>
 import { useAccountStore } from '@/stores/AccountStore'
+import { computed } from 'vue'
 import AvatarWithAuth from '@/components/chatView/AvatarWithAuth.vue' // 引入组件
 import defaultImg from '@/assets/default.png'
 const accountStore = useAccountStore()
-const avatar = accountStore.user?.avatar || defaultImg
+const avatar = computed(() => accountStore.user?.avatar || defaultImg)
 // 处理登录成功的回调
 const handleLoginSuccess = (formData) => {
     console.log('登录成功', formData)

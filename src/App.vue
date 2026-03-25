@@ -4,8 +4,9 @@ import { useAccountStore } from './stores/AccountStore';
 import { ElMessage } from 'element-plus';
 import { useComponentStore } from './stores/ComponentStore';
 import { wsClient } from './utils/ws';
+import { useOnlineUserStore } from './stores/OnlineUserStore';
 const componentStore = useComponentStore()
-
+const OnlineUserStore = useOnlineUserStore()
 const accountStore = useAccountStore();
 const verifyAuth = async () => {
   try {
@@ -34,11 +35,25 @@ const verifyAuth = async () => {
 
 onMounted(async()=>{
  await verifyAuth();
+ wsClient.onMessage(handleOnlineUser)
  await wsClient.connect(localStorage.getItem('token'));
+ handleHeartBreak();
 });
 onUnmounted(() => {
   wsClient.close();
 });
+const handleOnlineUser = (msg) => { 
+  if (msg?.type !== 'ONLINE_LIST') return
+  OnlineUserStore.onlineUsers = msg.users
+}
+const handleHeartBreak = () => {
+  setInterval(() => {
+    wsClient.send({
+      type: 'HEARTBEAT',
+      content: accountStore.user.id,
+    });
+  }, 180000); 
+}
 </script>
 
 <template>

@@ -2,7 +2,7 @@
     <div class="ChatView">
         <div class="ChatView-left">
             <el-scrollbar height="100%" @end-reached="loadMore">
-                <div v-for="item in messageList" :key="item" class="scrollbar-demo-item" @click="selectRoom(item)">
+                <div v-for="item in messageList" :key="item.id" class="scrollbar-demo-item" @click="selectRoom(item)">
                     <div class="avatar">
                         <img :src="item.avatarUrl" alt=""></img>
                     </div>
@@ -16,23 +16,27 @@
         <div class="ChatView-right">
             <div class="ChatRoom">
                 <div class="RoomTitle">{{ currentChatRoom?.name || '聊天室' }}</div>
-                <div class="RoomContent" ref="roomContentRef">
-                    <div v-for="item in currentMessageList" :key="item.id" class="message-item" :class="{ 'is-self': item.isSelf }">
+                <el-scrollbar class="RoomContent" ref="roomContentRef" @end-reached="handleEndReached">
+                    <div v-for="item in currentMessageList" :key="item.id" class="message-item"
+                        :class="{ 'is-self': item.isSelf }">
                         <div class="avatar">
-                            <img :src="item.senderAvatar || avatars" alt="" @error="(e) => e.target.src = avatars"></img>
+                            <img :src="item.senderAvatar || avatars" alt=""
+                                @error="(e) => e.target.src = avatars"></img>
                         </div>
-                        <div class="content">
-                            <div class="name">{{ item.senderName }}</div>
-                            <div class="bubble">{{ item.content }}</div>
+                        <div class="box">
+                            <div class="content">
+                                <div class="name">{{ item.senderName }}</div>
+                                <div class="bubble">{{ item.content }}</div>
+                            </div>
+                            <div class="time">{{ item.sentAt }}</div>
                         </div>
                     </div>
-                </div>
+                </el-scrollbar>
                 <div class="RoomInput">
                     <div class="input-box">
-                        <textarea ref="textareaRef" v-model="message"
-                            placeholder="请输入消息..." @input="adjustTextareaHeight"
-                            @keydown.enter.exact.prevent="sendMessage" @keydown.shift.enter="insertNewline"
-                            class="auto-resize-textarea" />
+                        <textarea ref="textareaRef" v-model="message" placeholder="请输入消息..."
+                            @input="adjustTextareaHeight" @keydown.enter.exact.prevent="sendMessage"
+                            @keydown.shift.enter="insertNewline" class="auto-resize-textarea" />
                         <button @click="sendMessage" class="send-button">发送</button>
                     </div>
                     <!-- 功能图标栏 -->
@@ -88,13 +92,20 @@ const currentUserAvatar = computed(() => {
 })
 const currentMessageList = computed(() => {
     const list = chatRoomStore.currentMessageList || [];
-    return list.map(item => {
+    const sortedList = [...list].sort((a, b) => {
+        return new Date(a.sentAt) - new Date(b.sentAt);
+    });
+    return sortedList.map(item => {
         const isSelf = currentUserId.value !== null && String(item.senderId) === String(currentUserId.value)
+        const sentAt = new Date(item.sentAt);
+        const formattedTime = `${String(sentAt.getHours()).padStart(2, '0')}:${String(sentAt.getMinutes()).padStart(2, '0')}:${String(sentAt.getSeconds()).padStart(2, '0')}`;
+        
         return {
             ...item,
             senderName: item.senderName || (isSelf ? currentUserName.value : ''),
             senderAvatar: item.senderAvatar || (isSelf ? currentUserAvatar.value : '') || avatars,
-            isSelf
+            isSelf,
+            sentAt: formattedTime
         }
     })
 })
@@ -112,11 +123,11 @@ const buildMessageItem = (source) => {
     }
 }
 const scrollToBottom = async () => {
-    await nextTick()
-    const el = roomContentRef.value
-    if (!el) return
-    el.scrollTop = el.scrollHeight
-}
+  await nextTick();
+  if (roomContentRef.value?.wrapRef) {
+    roomContentRef.value.wrapRef.scrollTop = roomContentRef.value.wrapRef.scrollHeight;
+  }
+};
 const handleWsMessage = (msg) => {
     if (msg?.type !== 'GROUP') return
     const source = msg.data || msg
@@ -128,14 +139,14 @@ const handleWsMessage = (msg) => {
     }
     chatRoomStore.currentMessageList.push(buildMessageItem(source))
 }
-onMounted(async()=>{
-   await chatRoomStore.getAllRoom();
-   if (chatRoomStore.currentChatRoom?.id) {
-      await chatRoomStore.getCurrentMessageList();
-      wsClient.joinGroup(chatRoomStore.currentChatRoom.id)
-      await scrollToBottom()
-   }
-   offWsMessage = wsClient.onMessage(handleWsMessage)
+onMounted(async () => {
+    await chatRoomStore.getAllRoom();
+    if (chatRoomStore.currentChatRoom?.id) {
+        await chatRoomStore.getCurrentMessageList();
+        wsClient.joinGroup(chatRoomStore.currentChatRoom.id)
+        await scrollToBottom()
+    }
+    offWsMessage = wsClient.onMessage(handleWsMessage)
 })
 onUnmounted(() => {
     if (offWsMessage) {
@@ -149,7 +160,7 @@ onUnmounted(() => {
 const loadMore = () => {
 
 }
-const currentChatRoom = computed(()=>{
+const currentChatRoom = computed(() => {
     return chatRoomStore.currentChatRoom;
 })
 const selectRoom = async (item) => {
@@ -158,46 +169,71 @@ const selectRoom = async (item) => {
         wsClient.leaveGroup(oldRoomId)
     }
     chatRoomStore.currentChatRoom = item;
-    await chatRoomStore.getCurrentMessageList();
+    await chatRoomStore.getCurrentMessageList(50, null);
     await scrollToBottom()
     if (item?.id) {
         wsClient.joinGroup(item.id)
     }
 }
 const sendMessage = async () => {
-  const content = message.value.trim()
-  if (!content) return
-  if (!chatRoomStore.currentChatRoom?.id) {
-    ElMessage.warning('请先选择聊天室')
-    return
-  }
-  if (!wsClient.ws || wsClient.ws.readyState !== WebSocket.OPEN) {
-    ElMessage.error('WebSocket 未连接')
-    return
-  }
-  if (sending.value) return
-  sending.value = true
-  try {
-    wsClient.sendGroupMessage(
-      chatRoomStore.currentChatRoom.id,
-      content,
-      'TEXT',
-      currentUserId.value,
-      currentUserName.value,
-      currentUserAvatar.value
-    )
-    message.value = ''
-  } finally {
-    sending.value = false
-  }
+    const content = message.value.trim()
+    if (!content) return
+    if (!chatRoomStore.currentChatRoom?.id) {
+        ElMessage.warning('请先选择聊天室')
+        return
+    }
+    if (!wsClient.ws || wsClient.ws.readyState !== WebSocket.OPEN) {
+        ElMessage.error('WebSocket 未连接')
+        return
+    }
+    if (sending.value) return
+    sending.value = true
+    try {
+        wsClient.sendGroupMessage(
+            chatRoomStore.currentChatRoom.id,
+            content,
+            'TEXT',
+            currentUserId.value,
+            currentUserName.value,
+            currentUserAvatar.value,
+            Date.now()
+        )
+        message.value = ''
+    } finally {
+        sending.value = false
+    }
 }
 watch(
-  () => currentMessageList.value.length,
-  async () => {
-    await scrollToBottom()
-  }
+    () => currentMessageList.value.length,
+    async () => {
+        await scrollToBottom()
+    }
 )
+const isLoadingMore = ref(false);
+const handleEndReached = async (direction) => {
+  if (direction === 'top' && !isLoadingMore.value) {
+    const rawMessages = chatRoomStore.currentMessageList;
+    if (!rawMessages || rawMessages.length === 0) return;
 
+    const earliestSentAt = rawMessages[0]?.sentAt;
+    if (!earliestSentAt) return;
+
+    isLoadingMore.value = true;
+    try {
+      const wrap = roomContentRef.value?.wrapRef;
+      if (!wrap) return;
+
+      const oldScrollHeight = wrap.scrollHeight;
+      await chatRoomStore.getCurrentMessageList(50, earliestSentAt);
+      await nextTick();
+
+      // 恢复滚动位置
+      wrap.scrollTop = wrap.scrollHeight - oldScrollHeight;
+    } finally {
+      isLoadingMore.value = false;
+    }
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -302,30 +338,57 @@ watch(
                 }
             }
 
-            .content {
-                max-width: 72%;
+            .box {
                 display: flex;
                 flex-direction: column;
-                gap: 4px;
+                max-width: calc(100% - 48px);
+                /* 减去头像宽度和间距 */
+                flex: 1;
+                /* 添加这个属性 */
 
-                .name {
-                    font-size: 12px;
-                    color: #7a889d;
-                    line-height: 1;
-                    padding: 0 4px;
-                }
+                .content {
+                    max-width: 72%;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                    align-items: flex-start;
 
-                .bubble {
-                    font-size: 14px;
-                    line-height: 1.5;
-                    color: #1f2a37;
-                    background: #ffffff;
-                    border: 1px solid #e8eef5;
-                    border-radius: 6px 16px 16px 16px;
-                    padding: 10px 12px;
-                    box-shadow: 0 6px 16px rgba(31, 42, 55, 0.06);
-                    word-break: break-word;
-                    white-space: pre-wrap;
+                    /* 新增样式，修复换行问题 */
+                    min-width: 0;
+                    /* 重要：允许内容收缩 */
+                    width: fit-content;
+                    /* 根据内容自适应宽度 */
+                    max-width: min(72%, 600px);
+
+                    /* 添加最大像素限制 */
+                    .name {
+                        font-size: 12px;
+                        color: #7a889d;
+                        line-height: 1;
+                        padding: 0 4px;
+                    }
+
+                    .bubble {
+                        /* 新增样式 */
+                        max-width: 100%;
+                        /* 确保气泡不超过容器 */
+                        word-break: break-word;
+                        /* 中文换行优化 */
+                        hyphens: auto;
+                        /* 自动连字符 */
+
+                        /* 原有样式 */
+                        font-size: 14px;
+                        line-height: 1.5;
+                        color: #1f2a37;
+                        background: #ffffff;
+                        border: 1px solid #e8eef5;
+                        border-radius: 6px 16px 16px 16px;
+                        padding: 10px 12px;
+                        box-shadow: 0 6px 16px rgba(31, 42, 55, 0.06);
+                        overflow-wrap: break-word;
+                        white-space: pre-wrap;
+                    }
                 }
             }
         }
@@ -333,19 +396,33 @@ watch(
         .message-item.is-self {
             flex-direction: row-reverse;
 
-            .content {
+            .box {
                 align-items: flex-end;
+                max-width: calc(100% - 48px);
 
-                .name {
-                    text-align: right;
-                }
+                .content {
+                    align-items: flex-end;
+                    /* 右侧消息的容器也应用相同修复 */
+                    min-width: 0;
+                    width: fit-content;
+                    max-width: min(72%, 600px);
 
-                .bubble {
-                    background: #0099ff;
-                    color: #ffffff;
-                    border-color: #0099ff;
-                    border-radius: 16px 6px 16px 16px;
-                    box-shadow: 0 8px 18px rgba(0, 153, 255, 0.28);
+
+                    .name {
+                        text-align: right;
+                    }
+
+                    .bubble {
+                        /* 右侧消息气泡样式调整 */
+                        background: #0099ff;
+                        color: #ffffff;
+                        border-color: #0099ff;
+                        border-radius: 16px 6px 16px 16px;
+                        box-shadow: 0 8px 18px rgba(0, 153, 255, 0.28);
+
+                        /* 同样应用最大宽度限制 */
+                        max-width: 100%;
+                    }
                 }
             }
         }

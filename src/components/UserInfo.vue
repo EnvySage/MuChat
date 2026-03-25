@@ -29,7 +29,7 @@ const accountStore = useAccountStore();
     align-items: center;
     padding: 10px;
     width: 100%;
-    height: 100%;
+    height: 49%;
     border-radius: 10px;
     background: var(--color-third);
 
