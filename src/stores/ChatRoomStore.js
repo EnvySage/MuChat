@@ -19,8 +19,6 @@ export const useChatRoomStore = defineStore("chatRoom", () => {
         const res = await chat.getCurrentMessageList(currentChatRoom.value.id,size,beforeTime);
         if(res.code == 1){
             currentMessageList.value=[...res.data,...currentMessageList.value]
-            console.log(res.data)
-            console.log(currentMessageList.value)
         }else{
             console.log(res.msg);
         }

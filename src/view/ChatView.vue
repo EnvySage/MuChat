@@ -1,17 +1,13 @@
 <template>
     <div class="ChatView">
         <div class="ChatView-left">
-            <el-scrollbar height="100%" @end-reached="loadMore">
-                <div v-for="item in messageList" :key="item.id" class="scrollbar-demo-item" @click="selectRoom(item)">
-                    <div class="avatar">
-                        <img :src="item.avatarUrl" alt=""></img>
-                    </div>
-                    <div class="content">
-                        <div class="name">{{ item.name }}</div>
-                        <div class="desc">{{ item.description }}</div>
-                    </div>
-                </div>
-            </el-scrollbar>
+            <chat-message-list :message-list="messageList" 
+            @scroll-to-bottom="scrollToBottom" 
+            @load-more="loadMore"
+            v-if="sideTab ==='message'" />
+            <chat-contact-list v-else
+            :contact-list="contactList"
+             />
         </div>
         <div class="ChatView-right">
             <div class="ChatRoom">
@@ -70,16 +66,25 @@ import { ElMessage } from 'element-plus'
 import avatars from '@/assets/default.png'
 import { useChatRoomStore } from '@/stores/ChatRoomStore'
 import { useAccountStore } from '@/stores/AccountStore'
+import { useComponentStore } from '@/stores/ComponentStore'
+import { useContactStore } from '@/stores/ContactStore'
 import { wsClient } from '@/utils/ws';
+import ChatMessageList from '@/components/chatView/ChatMessageList.vue'
+import ChatContactList from '@/components/chatView/ChatContactList.vue'
+const contactStore = useContactStore();
 const chatRoomStore = useChatRoomStore();
 const accountStore = useAccountStore();
-
+const componentStore = useComponentStore();
 const message = ref('')
 const sending = ref(false)
 const roomContentRef = ref(null)
 let offWsMessage = null
+const sideTab = computed(() => componentStore.sideTab)
 const messageList = computed(() => {
     return chatRoomStore.chatRoomList || [];
+})
+const contactList = computed(() => {
+    return contactStore.contactList || [];
 })
 const currentUserId = computed(() => {
     return accountStore.user?.id || null;
@@ -99,7 +104,7 @@ const currentMessageList = computed(() => {
         const isSelf = currentUserId.value !== null && String(item.senderId) === String(currentUserId.value)
         const sentAt = new Date(item.sentAt);
         const formattedTime = `${String(sentAt.getHours()).padStart(2, '0')}:${String(sentAt.getMinutes()).padStart(2, '0')}:${String(sentAt.getSeconds()).padStart(2, '0')}`;
-        
+
         return {
             ...item,
             senderName: item.senderName || (isSelf ? currentUserName.value : ''),
@@ -123,11 +128,12 @@ const buildMessageItem = (source) => {
     }
 }
 const scrollToBottom = async () => {
-  await nextTick();
-  if (roomContentRef.value?.wrapRef) {
-    roomContentRef.value.wrapRef.scrollTop = roomContentRef.value.wrapRef.scrollHeight;
-  }
+    await nextTick();
+    if (roomContentRef.value?.wrapRef) {
+        roomContentRef.value.wrapRef.scrollTop = roomContentRef.value.wrapRef.scrollHeight;
+    }
 };
+const loadMore = () => { }
 const handleWsMessage = (msg) => {
     if (msg?.type !== 'GROUP') return
     const source = msg.data || msg
@@ -141,6 +147,7 @@ const handleWsMessage = (msg) => {
 }
 onMounted(async () => {
     await chatRoomStore.getAllRoom();
+    await contactStore.getAllContact();
     if (chatRoomStore.currentChatRoom?.id) {
         await chatRoomStore.getCurrentMessageList();
         wsClient.joinGroup(chatRoomStore.currentChatRoom.id)
@@ -156,25 +163,13 @@ onUnmounted(() => {
     if (chatRoomStore.currentChatRoom?.id) {
         wsClient.leaveGroup(chatRoomStore.currentChatRoom.id)
     }
+    chatRoomStore.currentMessageList = []
 })
-const loadMore = () => {
 
-}
 const currentChatRoom = computed(() => {
     return chatRoomStore.currentChatRoom;
 })
-const selectRoom = async (item) => {
-    const oldRoomId = chatRoomStore.currentChatRoom?.id
-    if (oldRoomId) {
-        wsClient.leaveGroup(oldRoomId)
-    }
-    chatRoomStore.currentChatRoom = item;
-    await chatRoomStore.getCurrentMessageList(50, null);
-    await scrollToBottom()
-    if (item?.id) {
-        wsClient.joinGroup(item.id)
-    }
-}
+
 const sendMessage = async () => {
     const content = message.value.trim()
     if (!content) return
@@ -211,28 +206,28 @@ watch(
 )
 const isLoadingMore = ref(false);
 const handleEndReached = async (direction) => {
-  if (direction === 'top' && !isLoadingMore.value) {
-    const rawMessages = chatRoomStore.currentMessageList;
-    if (!rawMessages || rawMessages.length === 0) return;
+    if (direction === 'top' && !isLoadingMore.value) {
+        const rawMessages = chatRoomStore.currentMessageList;
+        if (!rawMessages || rawMessages.length === 0) return;
 
-    const earliestSentAt = rawMessages[0]?.sentAt;
-    if (!earliestSentAt) return;
+        const earliestSentAt = rawMessages[0]?.sentAt;
+        if (!earliestSentAt) return;
 
-    isLoadingMore.value = true;
-    try {
-      const wrap = roomContentRef.value?.wrapRef;
-      if (!wrap) return;
+        isLoadingMore.value = true;
+        try {
+            const wrap = roomContentRef.value?.wrapRef;
+            if (!wrap) return;
 
-      const oldScrollHeight = wrap.scrollHeight;
-      await chatRoomStore.getCurrentMessageList(50, earliestSentAt);
-      await nextTick();
+            const oldScrollHeight = wrap.scrollHeight;
+            await chatRoomStore.getCurrentMessageList(50, earliestSentAt);
+            await nextTick();
 
-      // 恢复滚动位置
-      wrap.scrollTop = wrap.scrollHeight - oldScrollHeight;
-    } finally {
-      isLoadingMore.value = false;
+            // 恢复滚动位置
+            wrap.scrollTop = wrap.scrollHeight - oldScrollHeight;
+        } finally {
+            isLoadingMore.value = false;
+        }
     }
-  }
 };
 </script>
 
@@ -248,48 +243,6 @@ const handleEndReached = async (direction) => {
 .ChatView-left {
     width: 250px;
     height: 100%;
-
-    .scrollbar-demo-item {
-        display: flex;
-        align-items: center;
-        padding: 15px;
-        height: 70px;
-        width: 97%;
-        border-radius: 10px;
-        background: var(--color-third);
-        color: white;
-        margin: 0px;
-        margin-bottom: 10px;
-
-        .avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            overflow: hidden;
-            margin-right: 10px;
-
-            img {
-                width: 100%;
-                height: 100%;
-            }
-        }
-
-        .content {
-            .name {
-                font-size: 16px;
-                font-weight: 600;
-            }
-
-            .desc {
-                font-size: 12px;
-                color: var(--text2);
-            }
-        }
-    }
-
-    .el-slider {
-        margin-top: 20px;
-    }
 }
 
 .ChatView-right {

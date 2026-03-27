@@ -269,6 +269,7 @@ const submitAuth = async () => {
 
 <style scoped>
 .avatar-container {
+    padding: 5px;
     aspect-ratio: 1;
     width: 100%;
     cursor: pointer;

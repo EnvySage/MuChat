@@ -4,7 +4,7 @@
             在线人数：<span class="count">{{ count }}</span>
         </div>
         <div class="list-box">
-            <div class="list-item" v-for="(item, index) in userList" :key="index">
+            <div class="list-item" v-for="(item, index) in userList" :key="index" @click="setUserInfo(item)">
                 <img class="avatar" :src="item?.avatar" alt="">
                 <div class="name">{{ item?.nickname }}</div>
             </div>
@@ -19,7 +19,9 @@ import { useOnlineUserStore } from '../stores/OnlineUserStore'
 const OnlineUserStore = useOnlineUserStore()
 const userList = computed(()=>OnlineUserStore.onlineUsers)
 const count = computed(()=>OnlineUserStore.onlineUsers.length)
-
+const setUserInfo = (item)=>{
+    OnlineUserStore.currentUserInfoShow = item
+}
 
 </script>
 
@@ -46,11 +48,13 @@ const count = computed(()=>OnlineUserStore.onlineUsers.length)
         display: flex;
         flex-direction: column;
         gap: 10px;
+        padding: 0 10px;
         .list-item { 
             display: flex;
             align-items: center;
-            padding: 0 10px;
+            padding: 5px 10px;
             gap: 10px;
+            border-radius: 10px;
             .avatar { 
                 width: 35px;
                 height: 35px;
@@ -65,6 +69,9 @@ const count = computed(()=>OnlineUserStore.onlineUsers.length)
                 overflow: hidden;
                 text-overflow: ellipsis;
 
+            }
+            &:hover {
+                background: var(--color-primary);
             }
         }
     }

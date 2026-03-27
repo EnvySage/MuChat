@@ -1,10 +1,11 @@
 <script setup>
-import { ref,onMounted,onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useAccountStore } from './stores/AccountStore';
 import { ElMessage } from 'element-plus';
 import { useComponentStore } from './stores/ComponentStore';
 import { wsClient } from './utils/ws';
 import { useOnlineUserStore } from './stores/OnlineUserStore';
+import { Loading as ElemeLoading } from '@element-plus/icons-vue';
 const componentStore = useComponentStore()
 const OnlineUserStore = useOnlineUserStore()
 const accountStore = useAccountStore();
@@ -33,16 +34,30 @@ const verifyAuth = async () => {
   }
 }
 
-onMounted(async()=>{
- await verifyAuth();
- wsClient.onMessage(handleOnlineUser)
- await wsClient.connect(localStorage.getItem('token'));
- handleHeartBreak();
+onMounted(async () => {
+  await initApp();
 });
 onUnmounted(() => {
   wsClient.close();
 });
-const handleOnlineUser = (msg) => { 
+const isLoading = ref(true)
+const animationDelay = ref(true);
+const initApp = async () => {
+  try {
+    await verifyAuth();
+    wsClient.onMessage(handleOnlineUser)
+    await wsClient.connect(localStorage.getItem('token'));
+    handleHeartBreak();
+  } catch (error) {
+    console.error(error, '初始化应用失败')
+  } finally {
+    setTimeout(() => {
+      animationDelay.value = false;
+    }, 2000);
+    isLoading.value = false
+  }
+}
+const handleOnlineUser = (msg) => {
   if (msg?.type !== 'ONLINE_LIST') return
   OnlineUserStore.onlineUsers = msg.users
 }
@@ -52,14 +67,22 @@ const handleHeartBreak = () => {
       type: 'HEARTBEAT',
       content: accountStore.user.id,
     });
-  }, 180000); 
+  }, 180000);
 }
 </script>
 
 <template>
   <div class="app-bg">
     <div class="mainContent">
-      <router-view></router-view>
+      <!-- 显示加载界面 -->
+      <div v-if="isLoading || (animationDelay)" class="loading-container">
+        <!-- 太极图从中间飞上来并旋转 -->
+        <div class="taichi-container" :class="{ 'taichi-show': isLoading }">
+          <img src="@/assets/img/taichi.png" alt="太极图" class="taichi-image" />
+        </div>
+      </div>
+      <!-- 加载完成后显示路由内容 -->
+      <router-view v-else></router-view>
     </div>
   </div>
 </template>
@@ -73,10 +96,57 @@ const handleHeartBreak = () => {
   justify-content: center;
   align-items: center;
 }
+
 .mainContent {
   background: var(--color-primary);
   width: 1300px;
   height: 650px;
   border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+/* 太极图容器 */
+.taichi-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  opacity: 0;
+  transition: all 10s ease-in-out;
+  z-index: 1000;
+}
+
+.taichi-show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+/* 太极图样式 */
+.taichi-image {
+  width: 200px;
+  height: 200px;
+  animation: rotate 10s infinite linear;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(3600deg);
+  }
 }
 </style>
