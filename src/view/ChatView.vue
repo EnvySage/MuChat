@@ -81,7 +81,20 @@ const roomContentRef = ref(null)
 let offWsMessage = null
 const sideTab = computed(() => componentStore.sideTab)
 const messageList = computed(() => {
-    return chatRoomStore.chatRoomList || [];
+    const list = chatRoomStore.chatRoomList || [];
+    // 置顶的始终在最前面，同为置顶时id小的排前面
+    return [...list].sort((a, b) => {
+        // 先按置顶状态排序
+        if (a.isPin !== b.isPin) {
+            return b.isPin - a.isPin; // isPin 为 1 的排在前面
+        }
+        // 置顶状态下，按id升序
+        if (a.isPin) {
+            return a.id - b.id;
+        }
+        // 非置顶状态，按最新消息时间倒序
+        return new Date(b.lastMessageTime || 0) - new Date(a.lastMessageTime || 0);
+    });
 })
 const contactList = computed(() => {
     return contactStore.contactList || [];
@@ -138,19 +151,38 @@ const handleWsMessage = (msg) => {
     if (msg?.type !== 'GROUP') return
     const source = msg.data || msg
     const currentRoomId = chatRoomStore.currentChatRoom?.id
-    if (!source?.chatRoomId || !currentRoomId) return
-    if (String(source.chatRoomId) !== String(currentRoomId)) return
-    if (!Array.isArray(chatRoomStore.currentMessageList)) {
-        chatRoomStore.currentMessageList = []
+    if (!source?.chatRoomId) return
+
+    // 更新聊天室列表中该群的最新消息
+    const room = chatRoomStore.chatRoomList.find(
+        r => String(r.id) === String(source.chatRoomId)
+    )
+    if (room) {
+        room.lastMessage = source.content
+        room.lastMessageTime = source.sentAt
     }
-    chatRoomStore.currentMessageList.push(buildMessageItem(source))
+
+    if (String(source.chatRoomId) === String(currentRoomId)) {
+        // 当前群 → 追加消息
+        if (!Array.isArray(chatRoomStore.currentMessageList)) {
+            chatRoomStore.currentMessageList = []
+        }
+        chatRoomStore.currentMessageList.push(buildMessageItem(source))
+        // 顺手上报已读（防抖）
+        chatRoomStore.reportCurrentRead()
+    } else {
+        // 非当前群 → 本地未读数 +1
+        if (room) {
+            room.unreadCount = (room.unreadCount || 0) + 1
+        }
+    }
 }
 onMounted(async () => {
     await chatRoomStore.getAllRoom();
     await contactStore.getAllContact();
     if (chatRoomStore.currentChatRoom?.id) {
         await chatRoomStore.getCurrentMessageList();
-        wsClient.joinGroup(chatRoomStore.currentChatRoom.id)
+        // wsClient.joinGroup(chatRoomStore.currentChatRoom.id)
         await scrollToBottom()
     }
     offWsMessage = wsClient.onMessage(handleWsMessage)

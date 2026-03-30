@@ -5,6 +5,7 @@ import { ref } from "vue";
 export const useAccountStore = defineStore("account", () => {
     const user = ref(null);
     const componentStore = useComponentStore();
+    const isLogin = ref(false);
     const getCheckCode = async (type) => {
         const blob = await account.getCheckCode(type);
         const res = URL.createObjectURL(blob.data);
@@ -42,5 +43,5 @@ export const useAccountStore = defineStore("account", () => {
             user.value = null
         }
     }
-    return { getCheckCode, VerifyCheckCode, SendEmailCode, RegisterUser, LoginUser, VerifyToken, user };
+    return { isLogin,getCheckCode, VerifyCheckCode, SendEmailCode, RegisterUser, LoginUser, VerifyToken, user };
 }); 

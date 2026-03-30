@@ -77,16 +77,22 @@ const componentStore = useComponentStore()
 const accountStore = useAccountStore()
 const LoginCodeImg = ref('')
 const EmailCodeImg = ref('')
-
+const Login = computed(() => {
+    return accountStore.isLogin
+})
 onMounted(async () => {
     LoginCodeImg.value =await accountStore.getCheckCode(0)
 })
 
 const handleLogin = () => {
-    componentStore.showAuthDialog = true
-    accountStore.getCheckCode(0).then(res => {
-        LoginCodeImg.value = res
-    })
+    if(Login.value){
+
+    }else{
+        componentStore.showAuthDialog = true
+        accountStore.getCheckCode(0).then(res => {
+            LoginCodeImg.value = res
+        })
+    }
 }
 const handleCode = () => {
     dialogInnerVisible.value = true

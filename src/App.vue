@@ -5,8 +5,10 @@ import { ElMessage } from 'element-plus';
 import { useComponentStore } from './stores/ComponentStore';
 import { wsClient } from './utils/ws';
 import { useOnlineUserStore } from './stores/OnlineUserStore';
+import { useChatRoomStore } from './stores/ChatRoomStore';
 import { Loading as ElemeLoading } from '@element-plus/icons-vue';
 const componentStore = useComponentStore()
+const chatRoomStore = useChatRoomStore()
 const OnlineUserStore = useOnlineUserStore()
 const accountStore = useAccountStore();
 const verifyAuth = async () => {
@@ -39,13 +41,16 @@ onMounted(async () => {
 });
 onUnmounted(() => {
   wsClient.close();
+  accountStore.isLogin = false;
 });
 const isLoading = ref(true)
 const animationDelay = ref(true);
 const initApp = async () => {
   try {
     await verifyAuth();
+    accountStore.isLogin = true;
     wsClient.onMessage(handleOnlineUser)
+    wsClient.onMessage(handleGroupCreated)
     await wsClient.connect(localStorage.getItem('token'));
     handleHeartBreak();
   } catch (error) {
@@ -60,6 +65,10 @@ const initApp = async () => {
 const handleOnlineUser = (msg) => {
   if (msg?.type !== 'ONLINE_LIST') return
   OnlineUserStore.onlineUsers = msg.users
+}
+const handleGroupCreated = (msg) => {
+  if (msg?.type !== 'GROUP_CREATED') return
+  chatRoomStore.chatRoomList.push(msg.chatRoom)
 }
 const handleHeartBreak = () => {
   setInterval(() => {

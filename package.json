@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "ali-oss": "^6.23.0",
     "axios": "^1.13.6",
     "element-plus": "^2.13.4",
     "pinia": "^3.0.4",

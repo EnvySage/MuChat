@@ -37,7 +37,7 @@ import UserInfo from '@/components/UserInfo.vue';
     padding: 15px;
     gap: 10px;
     .layout-content-left{
-        width: 50px;
+        width: 70px;
         height: 100%;
     }
     .layout-content-center{

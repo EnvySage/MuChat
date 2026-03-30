@@ -73,7 +73,8 @@ const handleRegisterSuccess = (formData) => {
     justify-content: space-between;
     align-items: center;
     padding: 10px 5px;
-
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1), inset 0 0 5px rgba(85, 122, 253, 0.5);
+    border-radius: 10px;
     .top {
         display: flex;
         flex-direction: column;

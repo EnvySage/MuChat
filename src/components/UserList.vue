@@ -16,11 +16,13 @@
 import { ref,onMounted,computed } from 'vue'
 import avatar from '../assets/default.png'
 import { useOnlineUserStore } from '../stores/OnlineUserStore'
+import { useComponentStore } from '@/stores/ComponentStore'
+const componentStore = useComponentStore()
 const OnlineUserStore = useOnlineUserStore()
 const userList = computed(()=>OnlineUserStore.onlineUsers)
 const count = computed(()=>OnlineUserStore.onlineUsers.length)
 const setUserInfo = (item)=>{
-    OnlineUserStore.currentUserInfoShow = item
+    componentStore.userInfo = item
 }
 
 </script>

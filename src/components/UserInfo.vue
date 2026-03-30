@@ -8,13 +8,13 @@
                 <span class="nickName">{{ userInfo?.nickname || '未命名' }}</span>
             </div>
             <div class="desc">
-                <span class="signature">{{ userInfo.description || '这个人很懒，什么都没有留下' }}</span>
+                <span class="signature">{{ userInfo?.description || '这个人很懒，什么都没有留下' }}</span>
                 <span class="status">{{ userInfo?.status ? '在线' : '离线' }}</span>
                 <span class="email">{{ userInfo?.email || '未绑定' }}</span>
             </div>
         </div>
         <div class="btnBox">
-            <div class="btn" v-if="userInfo.id==accountStore.user.id">
+            <div class="btn" v-if="userInfo.id==accountStore.user.id" @click="openEditUserInfoDialog">
                 <span class="iconfont icon-xiugai"></span>
                 <span class="text">修改信息</span>
             </div>
@@ -28,12 +28,18 @@
                 <span class="iconfont icon-shanchulianxiren"></span>
                 <span class="text">删除联系</span>
             </div>
-            <div class="btn">
+            <div class="btn" @click="openCreateGroupDialog">
                 <span class="iconfont icon-chuangjianqunliao"></span>
                 <span class="text">创建群聊</span>
             </div>
 
         </div>
+
+        <!-- 创建群聊弹窗 -->
+        <CreateGroupDialog ref="createGroupDialogRef" @confirm="handleCreateGroup" />
+
+        <!-- 修改个人信息弹窗 -->
+        <EditUserInfoDialog ref="editUserInfoDialogRef" @confirm="handleUpdateUserInfo" />
     </div>
 </template>
 
@@ -43,15 +49,41 @@ import { useAccountStore } from '@/stores/AccountStore';
 import { useOnlineUserStore } from '@/stores/OnlineUserStore';
 import { useContactStore } from '@/stores/ContactStore';
 import defaultImg from '@/assets/default.png'
+import CreateGroupDialog from './CreateGroupDialog.vue';
+import EditUserInfoDialog from './EditUserInfoDialog.vue';
+import { ElMessage } from 'element-plus';
+import { useChatRoomStore } from '@/stores/ChatRoomStore';
+import { useComponentStore } from '@/stores/ComponentStore';
+const componentStore = useComponentStore()
+const chatRoomStore = useChatRoomStore();
 const accountStore = useAccountStore();
 const OnlineUserStore = useOnlineUserStore();
 const ContactStore = useContactStore();
+
+const createGroupDialogRef = ref(null);
+const editUserInfoDialogRef = ref(null);
+
+const openCreateGroupDialog = () => {
+    createGroupDialogRef.value?.open();
+};
+
+const openEditUserInfoDialog = () => {
+    editUserInfoDialogRef.value?.open();
+};
+
+const handleCreateGroup = async(groupData) => {
+    await chatRoomStore.createChatRoom(groupData);
+};
+
+const handleUpdateUserInfo = (userData) => {
+    console.log('修改个人信息:', userData);
+    ElMessage.success('信息更新成功');
+};
 const userInfo = computed(() => {
-    if (OnlineUserStore.currentUserInfoShow == null) {
+    if(componentStore.userInfoShow==null){
         return accountStore.user
-    } else {
-        return OnlineUserStore.currentUserInfoShow
     }
+    return componentStore.userInfoShow
 })
 const contact = computed(() => {
     return {

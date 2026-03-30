@@ -1,32 +1,57 @@
 <template>
+    <div class="title">消息列表</div>
     <el-scrollbar height="100%" @end-reached="loadMore">
-        <div v-for="item in messageList" :key="item.id" class="scrollbar-demo-item" @click="selectRoom(item)">
+        <div
+            v-for="item in messageList"
+            :key="item.id"
+            class="scrollbar-demo-item"
+            :class="{ active: chatRoomStore.currentChatRoom?.id === item.id }"
+            @click="selectRoom(item)"
+        >
             <div class="avatar">
-                <img :src="item.avatarUrl" alt=""></img>
+                <img :src="item.avatarUrl || defaultImg" alt=""></img>
             </div>
             <div class="content">
                 <div class="name">{{ item.name }}</div>
-                <div class="desc">{{ item.description }}</div>
+                <div class="desc">{{ item.lastMessage || item.description }}</div>
+            </div>
+            <span v-if="item.unreadCount > 0" class="unread-badge">
+                {{ item.unreadCount > 99 ? '99+' : item.unreadCount }}
+            </span>
+            <div v-if="item.isPin" class="pin-icon">
+                <img src="@/assets/img/taichi.png" />
             </div>
         </div>
     </el-scrollbar>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useChatRoomStore } from '@/stores/ChatRoomStore'
 import { wsClient } from '@/utils/ws'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import defaultImg from '@/assets/default.png'
+
 const chatRoomStore = useChatRoomStore()
 const props = defineProps({
     messageList: Array,
 })
+
+
+
+
 const selectRoom = async (item) => {
+    if(chatRoomStore.currentChatRoom?.id === item.id) return
     chatRoomStore.currentMessageList = []
     const oldRoomId = chatRoomStore.currentChatRoom?.id
     if (oldRoomId) {
         wsClient.leaveGroup(oldRoomId)
+        // 上报旧房间的已读位置
+        chatRoomStore.reportRead(oldRoomId)
     }
     chatRoomStore.currentChatRoom = item;
+    // 进入新房间，本地立即清零未读数
+    item.unreadCount = 0
     await chatRoomStore.getCurrentMessageList(50, null);
     await scrollToBottom()
     if (item?.id) {
@@ -54,6 +79,21 @@ const loadMore = () => {
     color: white;
     margin: 0px;
     margin-bottom: 10px;
+    position: relative;
+
+    &.active {
+        background: var(--selected);
+    }
+
+    .pin-icon {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        img{
+            width: 20px;
+            height: 20px;
+        }
+    }
 
     .avatar {
         width: 50px;
@@ -79,9 +119,38 @@ const loadMore = () => {
             color: var(--text2);
         }
     }
+
+    .unread-badge {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        min-width: 18px;
+        height: 18px;
+        line-height: 18px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: #fff;
+        background: #f56c6c;
+        border-radius: 9px;
+        padding: 0 5px;
+        z-index: 1;
+    }
 }
 
 .el-slider {
     margin-top: 20px;
+}
+.title{
+    background-color: var(--color-secondary);
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    border-radius: 10px;
+    width: 97%;
+    padding:15px;
+    margin-bottom: 10px;
 }
 </style>
