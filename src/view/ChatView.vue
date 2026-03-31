@@ -1,17 +1,19 @@
 <template>
     <div class="ChatView">
         <div class="ChatView-left">
-            <chat-message-list :message-list="messageList" 
-            @scroll-to-bottom="scrollToBottom" 
-            @load-more="loadMore"
-            v-if="sideTab ==='message'" />
-            <chat-contact-list v-else
-            :contact-list="contactList"
-             />
+            <chat-message-list :message-list="messageList" @scroll-to-bottom="scrollToBottom" @load-more="loadMore"
+                v-if="sideTab === 'message'" />
+            <chat-contact-list v-else :contact-list="contactList" />
         </div>
         <div class="ChatView-right">
-            <div class="ChatRoom">
-                <div class="RoomTitle">{{ currentChatRoom?.name || '聊天室' }}</div>
+            <div class="ChatRoom" v-if="chatRoomStore.currentChatRoom != null && accountStore.isLogin">
+                <div class="RoomHeader">
+                    <div class="RoomTitle">{{ currentChatRoom?.name || '聊天室' }}</div>
+                    <div class="funBox">
+                        <span class="iconfont icon-gengduo" @click="openGroupManageDrawer"></span>
+                    </div>
+                </div>
+
                 <el-scrollbar class="RoomContent" ref="roomContentRef" @end-reached="handleEndReached">
                     <div v-for="item in currentMessageList" :key="item.id" class="message-item"
                         :class="{ 'is-self': item.isSelf }">
@@ -55,6 +57,26 @@
                     </div>
                 </div>
             </div>
+            <div class="welcome" v-else>
+                <div class="welcome-content">
+                    <h1 class="welcome-title">欢迎使用聊天室</h1>
+                    <p class="welcome-subtitle">选择左侧的聊天室开始对话</p>
+                    <div class="welcome-tips">
+                        <div class="tip-item">
+                            <span class="tip-icon">👈</span>
+                            <span>聊天室查看消息</span>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon">📨</span>
+                            <span>实时接收新消息</span>
+                        </div>
+                        <div class="tip-item">
+                            <span class="tip-icon">👥</span>
+                            <span>与群组成员畅聊</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
     </div>
@@ -71,6 +93,8 @@ import { useContactStore } from '@/stores/ContactStore'
 import { wsClient } from '@/utils/ws';
 import ChatMessageList from '@/components/chatView/ChatMessageList.vue'
 import ChatContactList from '@/components/chatView/ChatContactList.vue'
+
+
 const contactStore = useContactStore();
 const chatRoomStore = useChatRoomStore();
 const accountStore = useAccountStore();
@@ -261,6 +285,9 @@ const handleEndReached = async (direction) => {
         }
     }
 };
+const openGroupManageDrawer = () => {
+    componentStore.rightTab = 'groupManage';
+};
 </script>
 
 <style lang="scss" scoped>
@@ -280,6 +307,71 @@ const handleEndReached = async (direction) => {
 .ChatView-right {
     flex: 1;
 
+    .welcome {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-third);
+        border-radius: 10px;
+
+        .welcome-content {
+            text-align: center;
+            padding: 40px;
+            max-width: 500px;
+
+            .welcome-icon {
+                font-size: 80px;
+                margin-bottom: 20px;
+                animation: float 3s ease-in-out infinite;
+            }
+
+            .welcome-title {
+                font-size: 32px;
+                font-weight: 600;
+                color: white;
+                margin-bottom: 10px;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .welcome-subtitle {
+                font-size: 16px;
+                color: var(--text2);
+                margin-bottom: 40px;
+                line-height: 1.5;
+            }
+
+            .welcome-tips {
+                display: flex;
+                flex-direction: column;
+                gap: 15px;
+                align-items: center;
+
+                .tip-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 10px 20px;
+                    background: rgba(100, 61, 61, 0.1);
+                    border-radius: 8px;
+                    backdrop-filter: blur(10px);
+                    font-size: 14px;
+                    color: rgba(255, 255, 255, 0.9);
+                    transition: transform 0.3s ease, background 0.3s ease;
+
+                    &:hover {
+                        transform: translateX(5px);
+                        background: rgba(255, 255, 255, 0.15);
+                    }
+
+                    .tip-icon {
+                        font-size: 18px;
+                    }
+                }
+            }
+        }
+    }
+
     .ChatRoom {
         border-radius: 10px;
         background-color: var(--color-third);
@@ -288,13 +380,27 @@ const handleEndReached = async (direction) => {
         display: flex;
         flex-direction: column;
 
-        .RoomTitle {
+        .RoomHeader {
+            display: flex;
             height: 50px;
             background-color: var(--color-secondary);
             border-radius: 10px 10px 0px 0px;
             font-size: large;
-            padding: 10px;
+            padding: 10px 20px;
             color: white;
+            justify-content: space-between;
+            .RoomTitle {
+                color: white;
+            }
+            .funBox{
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                .iconfont{
+                    font-size: 24px;
+                    font-weight: bold;
+                }
+            }
         }
     }
 
@@ -511,6 +617,21 @@ const handleEndReached = async (direction) => {
         .more-icon {
             background-color: #a0a0a0;
         }
+    }
+}
+
+// 欢迎页面动画
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0px);
     }
 }
 </style>

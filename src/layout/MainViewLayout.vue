@@ -9,8 +9,9 @@
                 <ChatView />
             </div>
             <div class="layout-content-right">
-                <UserInfo />
-                <UserList />
+                <UserInfo v-if="componentStore.rightTab === 'default'" />
+                <UserList v-if="componentStore.rightTab === 'default'" />
+                <GroupManage v-else-if="componentStore.rightTab === 'groupManage'" />
             </div>
         </div>
         <div class="layout-footer"></div>
@@ -18,10 +19,14 @@
 </template>
 
 <script setup>
+import { useComponentStore } from '@/stores/ComponentStore';
 import SideTab from '@/components/SideTab.vue';
 import ChatView from '@/view/ChatView.vue';
 import UserList from '@/components/UserList.vue';
 import UserInfo from '@/components/UserInfo.vue';
+import GroupManage from '@/components/group/GroupManageDrawer.vue';
+
+const componentStore = useComponentStore();
 </script>
 
 <style lang="scss" scoped>

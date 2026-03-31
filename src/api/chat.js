@@ -7,10 +7,7 @@ export default {
     getAllContact: () => http.get('/contacts/all'),
     addContact: (contact) => http.post('/contacts/add',contact),
     deleteContact: (contactId) => http.delete('/contacts/delete/' + contactId),
-    // OSS 相关
     getOssToken: (folder) => http.get('/oss/getOssToken', { folder }),
     updateAvatar: (avatarUrl) => http.post('/oss/updateAvatar', { avatarUrl }),
-    // 已读相关
-    // 参数: chatRoomId, userId, lastReadMessageId (role不传,后端自己查)
-    reportRead: (chatRoomId, userId, lastReadMessageId) => http.put('/chatRoom/read', { chatRoomId, userId, lastReadMessageId }),
+    reportRead: (chatRoom) => http.put('/chatRoom/read', chatRoom),
 }

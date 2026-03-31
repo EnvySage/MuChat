@@ -13,7 +13,7 @@
             </div>
             <div class="content">
                 <div class="name">{{ item.name }}</div>
-                <div class="desc">{{ item.lastMessage || item.description }}</div>
+                <div class="desc">{{item.lastMessageSenderName}}: {{ item.lastMessageContent}}</div>
             </div>
             <span v-if="item.unreadCount > 0" class="unread-badge">
                 {{ item.unreadCount > 99 ? '99+' : item.unreadCount }}
@@ -41,18 +41,23 @@ const props = defineProps({
 
 
 const selectRoom = async (item) => {
-    if(chatRoomStore.currentChatRoom?.id === item.id) return
-    chatRoomStore.currentMessageList = []
+    if(chatRoomStore.currentChatRoom?.id === item.id) {
+        console.log('[selectRoom] 重复点击，退出')
+        return
+    }
     const oldRoomId = chatRoomStore.currentChatRoom?.id
     if (oldRoomId) {
         wsClient.leaveGroup(oldRoomId)
-        // 上报旧房间的已读位置
+        // 上报旧房间的已读位置（先上报，再清空）
         chatRoomStore.reportRead(oldRoomId)
     }
+    // 清空消息列表并设置当前房间
+    chatRoomStore.currentMessageList = []
     chatRoomStore.currentChatRoom = item;
     // 进入新房间，本地立即清零未读数
     item.unreadCount = 0
     await chatRoomStore.getCurrentMessageList(50, null);
+    chatRoomStore.reportRead(item.id)
     await scrollToBottom()
     if (item?.id) {
         wsClient.joinGroup(item.id)

@@ -48,17 +48,22 @@ export const useChatRoomStore = defineStore("chatRoom", () => {
         const accountStore = useAccountStore()
         const userId = accountStore.user?.id
         if (!userId) return
-
         // 取当前消息列表最后一条消息的 id
         const list = currentMessageList.value
         if (!list || list.length === 0) return
         const lastReadMessageId = list[list.length - 1].id
-        if (!lastReadMessageId) return
-
+        console.log(lastReadMessageId);
         clearTimeout(reportTimer)
         reportTimer = setTimeout(() => {
-            chat.reportRead(chatRoomId, userId, lastReadMessageId).catch(() => {})
-        }, 2000)
+            const data = {
+                chatRoomId: chatRoomId,  // 确保是数字类型
+                lastReadMessageId: lastReadMessageId,  // 确保是数字类型
+                userId: String(userId),
+            }
+            chat.reportRead(data).catch((err) => {
+                console.error('上报已读位置失败:', err)
+            })
+        }, 100)
     }
 
     // 上报当前正在查看的聊天室的已读位置
