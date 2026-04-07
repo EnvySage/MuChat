@@ -103,6 +103,36 @@ const message = ref('')
 const sending = ref(false)
 const roomContentRef = ref(null)
 let offWsMessage = null
+
+const parseTimeToMs = (value) => {
+    if (value === null || value === undefined || value === '') return null
+    if (value instanceof Date) {
+        const ms = value.getTime()
+        return Number.isFinite(ms) ? ms : null
+    }
+    if (typeof value === 'number') {
+        if (!Number.isFinite(value)) return null
+        return value < 1e12 ? value * 1000 : value
+    }
+    const text = String(value).trim()
+    if (!text) return null
+    if (/^\d+$/.test(text)) {
+        const num = Number(text)
+        if (!Number.isFinite(num)) return null
+        return text.length <= 10 ? num * 1000 : num
+    }
+    const normalized = text.includes('T') ? text : text.replace(' ', 'T')
+    const ms = Date.parse(normalized)
+    return Number.isFinite(ms) ? ms : null
+}
+
+const formatTime = (value) => {
+    const ms = parseTimeToMs(value)
+    if (ms === null) return '--:--:--'
+    const d = new Date(ms)
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`
+}
+
 const sideTab = computed(() => componentStore.sideTab)
 const messageList = computed(() => {
     const list = chatRoomStore.chatRoomList || [];
@@ -117,7 +147,7 @@ const messageList = computed(() => {
             return a.id - b.id;
         }
         // 非置顶状态，按最新消息时间倒序
-        return new Date(b.lastMessageTime || 0) - new Date(a.lastMessageTime || 0);
+        return (parseTimeToMs(b.lastMessageTime) || 0) - (parseTimeToMs(a.lastMessageTime) || 0);
     });
 })
 const contactList = computed(() => {
@@ -135,15 +165,19 @@ const currentUserAvatar = computed(() => {
 const currentMessageList = computed(() => {
     const list = chatRoomStore.currentMessageList || [];
     const sortedList = [...list].sort((a, b) => {
-        return new Date(a.sentAt) - new Date(b.sentAt);
+        return (parseTimeToMs(a.sentAt) || 0) - (parseTimeToMs(b.sentAt) || 0);
     });
     return sortedList.map(item => {
         const isSelf = currentUserId.value !== null && String(item.senderId) === String(currentUserId.value)
-        const sentAt = new Date(item.sentAt);
-        const formattedTime = `${String(sentAt.getHours()).padStart(2, '0')}:${String(sentAt.getMinutes()).padStart(2, '0')}:${String(sentAt.getSeconds()).padStart(2, '0')}`;
+        const formattedTime = formatTime(item.sentAt);
+
+        // 确保每条消息都有 id 字段
+        const messageId = item.id || item.messageId;
 
         return {
             ...item,
+            id: messageId,
+            messageId: messageId, // 保留 messageId 字段以便调试
             senderName: item.senderName || (isSelf ? currentUserName.value : ''),
             senderAvatar: item.senderAvatar || (isSelf ? currentUserAvatar.value : '') || avatars,
             isSelf,
@@ -153,8 +187,10 @@ const currentMessageList = computed(() => {
 })
 const buildMessageItem = (source) => {
     const isSelf = currentUserId.value !== null && String(source.senderId) === String(currentUserId.value)
-    return {
-        id: source.id,
+     const messageId = source.messageId || source.id || `temp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+     return {
+        id: messageId,
+        messageId: messageId,  // 保留原始字段名
         chatRoomId: source.chatRoomId,
         senderId: source.senderId,
         senderName: source.senderName || (isSelf ? currentUserName.value : ''),
@@ -171,19 +207,32 @@ const scrollToBottom = async () => {
     }
 };
 const loadMore = () => { }
+const joinAllRooms = () => {
+    const rooms = chatRoomStore.chatRoomList || []
+    rooms.forEach((room) => {
+        if (room?.id) {
+            wsClient.joinGroup(room.id)
+        }
+    })
+}
 const handleWsMessage = (msg) => {
     if (msg?.type !== 'GROUP') return
     const source = msg.data || msg
     const currentRoomId = chatRoomStore.currentChatRoom?.id
     if (!source?.chatRoomId) return
 
+    console.log('[handleWsMessage] 收到消息，房间ID:', source.chatRoomId, '当前房间ID:', currentRoomId);
+
     // 更新聊天室列表中该群的最新消息
     const room = chatRoomStore.chatRoomList.find(
         r => String(r.id) === String(source.chatRoomId)
     )
     if (room) {
-        room.lastMessage = source.content
+        room.lastMessageContent = source.content
+        room.lastMessageSenderName = source.senderName || room.lastMessageSenderName
         room.lastMessageTime = source.sentAt
+    } else {
+        console.warn('[handleWsMessage] 找不到房间:', source.chatRoomId);
     }
 
     if (String(source.chatRoomId) === String(currentRoomId)) {
@@ -192,17 +241,22 @@ const handleWsMessage = (msg) => {
             chatRoomStore.currentMessageList = []
         }
         chatRoomStore.currentMessageList.push(buildMessageItem(source))
+        console.log('[handleWsMessage] 当前房间收到消息，追加到列表');
         // 顺手上报已读（防抖）
         chatRoomStore.reportCurrentRead()
     } else {
         // 非当前群 → 本地未读数 +1
         if (room) {
             room.unreadCount = (room.unreadCount || 0) + 1
+            console.log('[handleWsMessage] 非当前房间收到消息，未读数+1，当前未读:', room.unreadCount);
+        } else {
+            console.warn('[handleWsMessage] 无法更新未读数，找不到房间');
         }
     }
 }
 onMounted(async () => {
     await chatRoomStore.getAllRoom();
+    joinAllRooms()
     await contactStore.getAllContact();
     if (chatRoomStore.currentChatRoom?.id) {
         await chatRoomStore.getCurrentMessageList();
@@ -217,10 +271,22 @@ onUnmounted(() => {
         offWsMessage = null
     }
     if (chatRoomStore.currentChatRoom?.id) {
-        wsClient.leaveGroup(chatRoomStore.currentChatRoom.id)
+        const rooms = chatRoomStore.chatRoomList || []
+        rooms.forEach((room) => {
+            if (room?.id) {
+                wsClient.leaveGroup(room.id)
+            }
+        })
     }
     chatRoomStore.currentMessageList = []
 })
+
+watch(
+    () => (chatRoomStore.chatRoomList || []).map(room => room?.id).join(','),
+    () => {
+        joinAllRooms()
+    }
+)
 
 const currentChatRoom = computed(() => {
     return chatRoomStore.currentChatRoom;

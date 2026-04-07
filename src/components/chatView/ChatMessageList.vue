@@ -47,7 +47,6 @@ const selectRoom = async (item) => {
     }
     const oldRoomId = chatRoomStore.currentChatRoom?.id
     if (oldRoomId) {
-        wsClient.leaveGroup(oldRoomId)
         // 上报旧房间的已读位置（先上报，再清空）
         chatRoomStore.reportRead(oldRoomId)
     }
@@ -56,12 +55,17 @@ const selectRoom = async (item) => {
     chatRoomStore.currentChatRoom = item;
     // 进入新房间，本地立即清零未读数
     item.unreadCount = 0
+    
+    // 先获取消息列表
     await chatRoomStore.getCurrentMessageList(50, null);
-    chatRoomStore.reportRead(item.id)
+    // 等待消息列表加载完成后再上报
     await scrollToBottom()
-    if (item?.id) {
-        wsClient.joinGroup(item.id)
+    
+    // 确保有消息后再上报已读
+    if (chatRoomStore.currentMessageList.length > 0) {
+        chatRoomStore.reportRead(item.id)
     }
+    
 }
 const emit = defineEmits(['scrollToBottom', 'loadMore'])
 const scrollToBottom = async() => {

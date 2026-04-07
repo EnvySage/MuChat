@@ -2,7 +2,7 @@
   <div class="group-manage-container">
     <div class="group-manage-header">
       <span class="back-btn" @click="back">
-        <span class="iconfont icon-fanhui"></span>
+        <el-icon :size="20"><Back /></el-icon>
       </span>
       <span class="title">群管理</span>
     </div>
@@ -11,18 +11,18 @@
       <div class="group-info-section">
         <div class="group-header">
           <div class="group-avatar">
-            <img :src="currentRoom?.avatar || defaultAvatar" alt="群头像">
+            <img :src="currentRoom?.avatarUrl || defaultAvatar" alt="群头像">
           </div>
           <div class="group-name-section">
             <div class="group-name">{{ currentRoom?.name || '群聊' }}</div>
             <div class="group-id">ID: {{ currentRoom?.id || '' }}</div>
           </div>
-        </div>
-        <div class="group-actions">
-          <span class="action-item" @click="shareGroup">
-            <span class="iconfont icon-fenxiang"></span>
-            分享
-          </span>
+          <!-- <div class="group-actions">
+            <span class="action-item" @click="shareGroup">
+              <el-icon><Share /></el-icon>
+              分享
+            </span>
+          </div> -->
         </div>
       </div>
 
@@ -35,13 +35,13 @@
         <div class="members-grid">
           <div class="member-item" v-for="(member, index) in displayMembers" :key="index">
             <div class="member-avatar">
-              <img :src="member.avatar || defaultAvatar" :alt="member.name">
+              <img :src="member.avatarUrl || defaultAvatar" :alt="member.userName">
             </div>
-            <div class="member-name">{{ member.name }}</div>
+            <div class="member-name">{{ member.userName }}</div>
           </div>
           <div class="member-item add-member" @click="addMember">
             <div class="member-avatar add">
-              <span class="iconfont icon-tianjia"></span>
+              <el-icon :size="46" color="white"><CirclePlus /></el-icon>
             </div>
             <div class="member-name">添加</div>
           </div>
@@ -50,7 +50,7 @@
 
       <!-- 群设置区域 -->
       <div class="group-settings-section">
-        <div class="setting-item" @click="editNotice">
+        <!-- <div class="setting-item" @click="editNotice">
           <div class="setting-left">
             <span class="iconfont icon-gonggao setting-icon"></span>
             <span class="setting-label">群公告</span>
@@ -58,7 +58,7 @@
           <div class="setting-value">
             <span class="notice-text">{{ groupNotice || '暂无' }}</span>
           </div>
-        </div>
+        </div> -->
         <div class="setting-item" @click="editMyNickname">
           <div class="setting-left">
             <span class="iconfont icon-yonghu setting-icon"></span>
@@ -123,7 +123,7 @@ import { useComponentStore } from '@/stores/ComponentStore';
 import { useChatRoomStore } from '@/stores/ChatRoomStore';
 import { useAccountStore } from '@/stores/AccountStore';
 import defaultAvatar from '@/assets/default.png';
-
+import {Back,Share,CirclePlus} from '@element-plus/icons-vue'
 const componentStore = useComponentStore();
 const chatRoomStore = useChatRoomStore();
 const accountStore = useAccountStore();
@@ -132,7 +132,7 @@ const currentRoom = computed(() => chatRoomStore.currentChatRoom);
 const currentUserName = computed(() => accountStore.user?.nickname || '我');
 
 // 模拟数据
-const memberCount = computed(() => 15);
+const memberCount = computed(() => chatRoomStore.currentChatRoom?.memberCount || 0);
 const myNickname = computed(() => '');
 const groupNotice = computed(() => '欢迎加入群聊，请遵守群规');
 const groupRemark = computed(() => '');
@@ -142,13 +142,7 @@ const isGroupOwner = computed(() => true);
 
 // 显示的成员（前5个）
 const displayMembers = computed(() => {
-  return [
-    { name: '管理员', avatar: defaultAvatar },
-    { name: '小明', avatar: defaultAvatar },
-    { name: '小红', avatar: defaultAvatar },
-    { name: '小刚', avatar: defaultAvatar },
-    { name: '小丽', avatar: defaultAvatar }
-  ];
+  return chatRoomStore.currentChatRoom?.members
 });
 
 const back = () => {
