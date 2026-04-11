@@ -12,6 +12,7 @@
                 <UserInfo v-if="componentStore.rightTab === 'default'" />
                 <UserList v-if="componentStore.rightTab === 'default'" />
                 <GroupManage v-else-if="componentStore.rightTab === 'groupManage'" />
+                <InviteMemberDialog @confirm="handleInviteSuccess" />
             </div>
         </div>
         <div class="layout-footer"></div>
@@ -25,7 +26,12 @@ import ChatView from '@/view/ChatView.vue';
 import UserList from '@/components/UserList.vue';
 import UserInfo from '@/components/UserInfo.vue';
 import GroupManage from '@/components/group/GroupManageDrawer.vue';
+import InviteMemberDialog from '@/components/group/InviteMemberDialog.vue';
 
+const handleInviteSuccess = (userIds) => {
+    console.log('邀请成功:', userIds);
+    // 可以刷新群成员列表
+};
 const componentStore = useComponentStore();
 </script>
 

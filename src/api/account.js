@@ -12,4 +12,6 @@ export default {
     Register: (user) => http.post('/account/register', user),
     Login: (user) => http.post('/account/login', user),
     VerifyToken: (token) => http.post('/account/verifyToken',{token}),
+    //用户
+    UpdateUserInfo: (user) => http.put('/user/updateUserInfo', user),
 }

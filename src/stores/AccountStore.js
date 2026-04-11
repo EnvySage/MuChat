@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import account from "@/api/account";
 import { useComponentStore } from "./ComponentStore";
 import { ref } from "vue";
+import { ElMessage } from "element-plus";
 export const useAccountStore = defineStore("account", () => {
     const user = ref(null);
     const componentStore = useComponentStore();
@@ -43,5 +44,15 @@ export const useAccountStore = defineStore("account", () => {
             user.value = null
         }
     }
-    return { isLogin,getCheckCode, VerifyCheckCode, SendEmailCode, RegisterUser, LoginUser, VerifyToken, user };
+    //用户相关
+    const UpdateUserInfo = async (user) => {
+        const res = await account.UpdateUserInfo(user);
+        if (res.code == 1) {
+            ElMessage.success('更新成功');
+        } else {
+            ElMessage.error(res.msg);
+        }
+    }
+    return { isLogin, getCheckCode, VerifyCheckCode, SendEmailCode, RegisterUser, LoginUser, VerifyToken, user, UpdateUserInfo };
+
 }); 

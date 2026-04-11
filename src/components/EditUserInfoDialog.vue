@@ -132,7 +132,7 @@ const handleConfirm = async () => {
 
         // 如果有待上传的文件，先上传到 OSS
         if (pendingFile.value) {
-            avatarUrl = await ossUploader.upload(pendingFile.value, 'user-avatar');
+            avatarUrl = await ossUploader.upload(pendingFile.value, { type: 'user-avatar' });
             // 调用后端接口更新头像
             const res = await chat.updateAvatar(avatarUrl);
             if (res.code !== 1 && res.code !== 200) {

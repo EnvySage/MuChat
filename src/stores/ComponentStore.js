@@ -6,5 +6,8 @@ export const useComponentStore = defineStore("component", () => {
     const userInfoShow = ref(null);
     const showGroupManage = ref(false);
     const rightTab = ref('default'); // default | groupManage
-    return { showAuthDialog,sideTab, userInfoShow, showGroupManage, rightTab };
+    const showInviteDialog = ref(false); // 邀请好友弹窗
+    const showKickDialog = ref(false); // 踢出成员弹窗
+
+    return { showAuthDialog,sideTab, userInfoShow, showGroupManage, rightTab, showInviteDialog, showKickDialog };
 });

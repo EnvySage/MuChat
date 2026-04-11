@@ -75,9 +75,9 @@ const handleCreateGroup = async(groupData) => {
     await chatRoomStore.createChatRoom(groupData);
 };
 
-const handleUpdateUserInfo = (userData) => {
-    console.log('修改个人信息:', userData);
-    ElMessage.success('信息更新成功');
+const handleUpdateUserInfo = async (userData) => {
+    await accountStore.UpdateUserInfo(userData);
+    await accountStore.VerifyToken(localStorage.getItem('token'));
 };
 const userInfo = computed(() => {
     if(componentStore.userInfoShow==null){

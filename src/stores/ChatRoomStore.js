@@ -44,19 +44,25 @@ export const useChatRoomStore = defineStore("chatRoom", () => {
     const chatRoomList = ref([]);
     const currentChatRoom = ref(null);
     const currentMessageList = ref([]);
-    const getAllRoom = async()=>{
+    const getAllRoom = async () => {
         const res = await chat.getAllChatRooms();
-        if(res.code == 1){
+        if (res.code == 1) {
             chatRoomList.value = res.data;
-            // currentChatRoom.value = chatRoomList.value[0];
-        }else{
+            // 同步更新 currentChatRoom，使其指向最新数据
+            if (currentChatRoom.value?.id) {
+                const updated = chatRoomList.value.find(room => room.id === currentChatRoom.value.id);
+                if (updated) {
+                    currentChatRoom.value = updated;
+                }
+            }
+        } else {
             console.log(res.msg);
         }
     }
-    const getCurrentMessageList = async(size,beforeTime)=>{
+    const getCurrentMessageList = async (size, beforeTime) => {
         if (!currentChatRoom.value?.id) return;
-        const res = await chat.getCurrentMessageList(currentChatRoom.value.id,size,beforeTime);
-        if(res.code == 1){
+        const res = await chat.getCurrentMessageList(currentChatRoom.value.id, size, beforeTime);
+        if (res.code == 1) {
             const mappedMessages = res.data.map(msg => ({
                 ...msg,
                 id: normalizeId(msg.id ?? msg.messageId),
@@ -64,17 +70,17 @@ export const useChatRoomStore = defineStore("chatRoom", () => {
             }));
             console.log('[getCurrentMessageList] 获取到', mappedMessages.length, '条消息');
             currentMessageList.value = [...mappedMessages, ...currentMessageList.value]
-        }else{
+        } else {
             console.log(res.msg);
         }
     }
-    const createChatRoom = async(room)=>{
+    const createChatRoom = async (room) => {
         const res = await chat.createChatRoom(room);
-        if(res.code == 1){
+        if (res.code == 1) {
             currentChatRoom.value = res.data;
-            await getCurrentMessageList(50,null);
+            await getCurrentMessageList(50, null);
             ElMessage.success("创建成功");
-        }else{
+        } else {
             ElMessage.error(res.msg);
 
         }
@@ -120,5 +126,64 @@ export const useChatRoomStore = defineStore("chatRoom", () => {
         reportRead(currentChatRoom.value.id)
     }
 
-    return { chatRoomList, currentChatRoom,getAllRoom,currentMessageList,getCurrentMessageList,createChatRoom,reportRead,reportCurrentRead };
+    const updateGroupNickname = async (data) => {
+        const res = await chat.updateGroupNickname(data);
+        if (res.code == 1) {
+            ElMessage.success("修改成功");
+        } else {
+            ElMessage.error(res.msg);
+        }
+    }
+
+    const inviteMember = async (data) => {
+        const res = await chat.inviteMember(data);
+        if (res.code == 1) {
+            ElMessage.success("邀请成功");
+            await getAllRoom();
+        } else {
+            ElMessage.error(res.msg);
+        }
+    }
+
+    const kickMember = async (data) => {
+        const res = await chat.kickMember(data);
+        if (res.code == 1) {
+            ElMessage.success("踢出成功");
+            await getAllRoom();
+        } else {
+            ElMessage.error(res.msg);
+        }
+    }
+
+    const batchMute = async (data) => {
+        const res = await chat.batchMute(data);
+        if (res.code == 1) {
+            ElMessage.success("操作成功");
+        } else {
+            ElMessage.error(res.msg);
+        }
+        return res;
+    }
+
+    const updateGroupInfo = async (data) => {
+        const res = await chat.updateGroupInfo(data);
+        if (res.code == 1) {
+            ElMessage.success("修改成功");
+        } else {
+            ElMessage.error(res.msg);
+        }
+        return res;
+    }
+    const exitGroup = async (chatRoomId) => {
+        const res = await chat.exitGroup(chatRoomId);
+        if (res.code == 1) {
+            ElMessage.success("退出成功");
+            await getAllRoom();
+        } else {
+            ElMessage.error(res.msg);
+        }
+    }
+    return { chatRoomList, currentChatRoom, getAllRoom, currentMessageList, 
+        getCurrentMessageList, createChatRoom, reportRead, reportCurrentRead, 
+        updateGroupNickname, inviteMember, kickMember, batchMute, updateGroupInfo, exitGroup};
 });

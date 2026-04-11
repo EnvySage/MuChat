@@ -31,12 +31,18 @@
                     </div>
                 </el-scrollbar>
                 <div class="RoomInput">
+                    <div class="muted-notice" v-if="isCurrentUserMuted">
+                        <el-icon :size="16"><WarningFilled /></el-icon>
+                        <span>你已被管理员禁言，暂时无法发送消息</span>
+                    </div>
+                    <template v-else>
                     <div class="input-box">
                         <textarea ref="textareaRef" v-model="message" placeholder="请输入消息..."
                             @input="adjustTextareaHeight" @keydown.enter.exact.prevent="sendMessage"
                             @keydown.shift.enter="insertNewline" class="auto-resize-textarea" />
                         <button @click="sendMessage" class="send-button">发送</button>
                     </div>
+                    
                     <!-- 功能图标栏 -->
                     <div class="icon-bar">
                         <div class="icon-item" @click="handleVoice">
@@ -55,6 +61,7 @@
                             <div class="icon-placeholder location-icon"></div>
                         </div>
                     </div>
+                    </template>
                 </div>
             </div>
             <div class="welcome" v-else>
@@ -85,6 +92,7 @@
 <script setup>
 import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { WarningFilled } from '@element-plus/icons-vue'
 import avatars from '@/assets/default.png'
 import { useChatRoomStore } from '@/stores/ChatRoomStore'
 import { useAccountStore } from '@/stores/AccountStore'
@@ -290,6 +298,14 @@ watch(
 
 const currentChatRoom = computed(() => {
     return chatRoomStore.currentChatRoom;
+})
+
+const isCurrentUserMuted = computed(() => {
+    const userId = accountStore.user?.id;
+    const members = chatRoomStore.currentChatRoom?.members;
+    if (!members || !userId) return false;
+    const member = members.find(m => String(m.userId) === String(userId));
+    return member?.isMuted === 1;
 })
 
 const sendMessage = async () => {
@@ -591,6 +607,19 @@ const openGroupManageDrawer = () => {
         flex-direction: column;
         padding: 15px;
         box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+
+        .muted-notice {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 12px;
+            background-color: #fef0f0;
+            border: 1px solid #fde2e2;
+            border-radius: 8px;
+            color: #f56c6c;
+            font-size: 13px;
+        }
 
         .input-box {
             width: 100%;

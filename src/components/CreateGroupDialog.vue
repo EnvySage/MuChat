@@ -182,7 +182,7 @@ const handleConfirm = async () => {
 
         // 如果有待上传的文件，先上传到 OSS
         if (pendingFile.value) {
-            avatarUrl = await ossUploader.upload(pendingFile.value, 'group-avatar');
+            avatarUrl = await ossUploader.upload(pendingFile.value, { type: 'user-avatar' });
         }
 
         emit('confirm', {

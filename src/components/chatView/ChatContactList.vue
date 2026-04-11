@@ -11,7 +11,25 @@
                 ></span>
             </div>
             <div class="content">
-                <div class="name">{{ item.contactNickname }}</div>
+                <div class="name">
+                    <template v-if="editingId === item.contactId">
+                        <el-input
+                            v-model="editingValue"
+                            size="small"
+                            class="alias-input"
+                            @blur="handleAliasBlur(item)"
+                            @keyup.enter="handleAliasBlur(item)"
+                            autofocus
+                        />
+                    </template>
+                    <template v-else>
+                        <span>{{ item.alias || item.contactNickname || '未知' }}</span>
+                        &nbsp;&nbsp;
+                        <el-icon color="gray" class="edit-icon" @click.stop="startEditAlias(item)">
+                            <EditPen/>
+                        </el-icon>
+                    </template>
+                </div>
                 <div class="desc">{{ item.contactDescription }}</div>
             </div>
         </div>
@@ -19,10 +37,12 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import defaultImg from '@/assets/default.png'
 import { useOnlineUserStore } from '@/stores/OnlineUserStore';
 import { useComponentStore } from '@/stores/ComponentStore';
+import chat from '@/api/chat';
+import { ElMessage, ElMessageBox } from 'element-plus';
 const componentStore = useComponentStore()
 const props = defineProps({
     contactList: Array,
@@ -30,6 +50,64 @@ const props = defineProps({
 const emit = defineEmits(['loadMoreContact'])
 
 const OnlineUserStore = useOnlineUserStore();
+
+// 别名编辑状态
+const editingId = ref(null);
+const editingValue = ref('');
+const submitting = ref(false);
+
+const startEditAlias = (item) => {
+    editingId.value = item.contactId;
+    editingValue.value = item.alias || '';
+    nextTick(() => {
+        const input = document.querySelector('.alias-input .el-input__inner');
+        if (input) input.focus();
+    });
+};
+
+const handleAliasBlur = async (item) => {
+    if (submitting.value) return;
+
+    const newValue = editingValue.value.trim();
+    const oldValue = item.alias || '';
+
+    // 值没变，直接退出编辑
+    if (newValue === oldValue) {
+        editingId.value = null;
+        return;
+    }
+
+    // 清空了备注，弹窗确认
+    if (newValue === '') {
+        try {
+            await ElMessageBox.confirm('是否清除备注？清除后将显示对方昵称', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning',
+            });
+        } catch {
+            // 取消，回退
+            editingId.value = null;
+            editingValue.value = '';
+            return;
+        }
+    }
+
+    // 提交
+    submitting.value = true;
+    try {
+        await chat.updateContact({ contactId: item.contactId, alias: newValue });
+        item.alias = newValue;
+        ElMessage.success('备注修改成功');
+    } catch (error) {
+        console.error('修改备注失败:', error);
+        ElMessage.error('修改备注失败');
+    } finally {
+        editingId.value = null;
+        editingValue.value = '';
+        submitting.value = false;
+    }
+};
 
 // 判断联系人是否在线
 const isOnline = (contactId) => {
@@ -39,14 +117,13 @@ const isOnline = (contactId) => {
 const loadMoreContact = () => {
     emit('loadMoreContact')
 }
-
 const selectContact = (item) => {
     const user={
         id:item.contactId,
         avatar:item.contactAvatar,
         nickname:item.contactNickname,
         description:item.contactDescription,
-        onlineStatus:item.contactOnlineStatus,
+        status:item.contactOnlineStatus,
         email:item.email,
     }
     componentStore.userInfoShow = user
@@ -100,8 +177,36 @@ const selectContact = (item) => {
 
     .content {
         .name {
+            display: flex;
+            align-items: center;
             font-size: 16px;
             font-weight: 600;
+
+            .edit-icon {
+                cursor: pointer;
+                transition: color 0.2s;
+                &:hover {
+                    color: var(--primary-color) !important;
+                }
+            }
+
+            .alias-input {
+                max-width: 140px;
+
+                :deep(.el-input__wrapper) {
+                    background-color: transparent;
+                    box-shadow: none;
+                    padding: 0;
+                    border-radius: 0;
+                }
+
+                :deep(.el-input__inner) {
+                    color: white;
+                    font-size: 14px;
+                    font-weight: 600;
+                    padding: 0;
+                }
+            }
         }
 
         .desc {

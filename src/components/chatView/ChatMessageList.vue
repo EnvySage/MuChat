@@ -28,10 +28,11 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useChatRoomStore } from '@/stores/ChatRoomStore'
+import { useComponentStore } from '@/stores/ComponentStore'
 import { wsClient } from '@/utils/ws'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import defaultImg from '@/assets/default.png'
-
+const componentStore = useComponentStore()
 const chatRoomStore = useChatRoomStore()
 const props = defineProps({
     messageList: Array,
@@ -41,6 +42,7 @@ const props = defineProps({
 
 
 const selectRoom = async (item) => {
+    componentStore.rightTab = 'default'
     if(chatRoomStore.currentChatRoom?.id === item.id) {
         console.log('[selectRoom] 重复点击，退出')
         return
@@ -65,6 +67,7 @@ const selectRoom = async (item) => {
     if (chatRoomStore.currentMessageList.length > 0) {
         chatRoomStore.reportRead(item.id)
     }
+
     
 }
 const emit = defineEmits(['scrollToBottom', 'loadMore'])
