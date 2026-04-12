@@ -112,6 +112,18 @@
             <span class="iconfont icon-youjiantou"></span>
           </div>
         </div>
+        
+        <!-- 管理员设置 -->
+        <div class="setting-item" v-if="isGroupOwner" @click="showSetAdminDialog">
+          <div class="setting-left">
+            <span class="iconfont icon-yonghu setting-icon"></span>
+            <span class="setting-label">管理员设置</span>
+          </div>
+          <div class="setting-value">
+            <span class="iconfont icon-youjiantou"></span>
+          </div>
+        </div>
+
         <div class="setting-item" @click="editJoinMethod">
           <div class="setting-left">
             <span class="iconfont icon-shezhi setting-icon"></span>
@@ -126,11 +138,11 @@
 
       <!-- 操作按钮区域 -->
       <div class="action-section">
-        <div class="action-item danger" @click="exitGroup">
+        <div class="action-item danger" @click="exitGroup" v-if="!isGroupOwner">
           <span class="iconfont icon-tuichu"></span>
           退出群聊
         </div>
-        <div class="action-item danger dismiss" @click="dismissGroup" v-if="isGroupOwner">
+        <div class="action-item danger dismiss" @click="dismissGroup" v-if="isGroupOwner" style="color: red;display: flex;align-items: center;justify-content: center;cursor: pointer;">
           <span class="iconfont icon-jieshu"></span>
           解散群聊
         </div>
@@ -176,6 +188,7 @@
     </el-dialog>
 
     <KickMemberDialog />
+    <SetAdminDialog />
   </div>
 </template>
 
@@ -187,8 +200,9 @@ import { useAccountStore } from '@/stores/AccountStore';
 import defaultAvatar from '@/assets/default.png';
 import { Back, Share, CirclePlus, ArrowRight, ArrowDown, ArrowLeft, Upload, Remove } from '@element-plus/icons-vue'
 import { ossUploader } from '@/utils/ossUploader';
-import { ElMessage } from 'element-plus';
+import { ElMessage,ElMessageBox} from 'element-plus';
 import KickMemberDialog from './KickMemberDialog.vue';
+import SetAdminDialog from './SetAdminDialog.vue';
 const componentStore = useComponentStore();
 const chatRoomStore = useChatRoomStore();
 const accountStore = useAccountStore();
@@ -308,6 +322,10 @@ const kickMember = () => {
   componentStore.showKickDialog = true;
 };
 
+const showSetAdminDialog = () => {
+  componentStore.showAdminDialog = true;
+};
+
 // 禁言管理弹窗
 const muteDialogVisible = ref(false);
 const muteSubmitting = ref(false);
@@ -409,9 +427,15 @@ const editJoinMethod = () => {
 const exitGroup =async() => {
   await chatRoomStore.exitGroup(currentRoom.value.id);
 };
-
-const dismissGroup = () => {
-  console.log('解散群聊');
+const dismissGroup = async () => {
+  ElMessageBox.confirm('确定解散群组？', '提示', {
+    type: 'warning',
+    confirmButtonText: '确定',
+    cancelButtonText: '取消'
+  }).then(async () => {
+    await chatRoomStore.dismissGroup(currentRoom.value.id);
+  }).catch(() => {
+  });
 };
 </script>
 

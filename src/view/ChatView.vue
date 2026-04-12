@@ -143,7 +143,7 @@ const formatTime = (value) => {
 
 const sideTab = computed(() => componentStore.sideTab)
 const messageList = computed(() => {
-    const list = chatRoomStore.chatRoomList || [];
+    const list = chatRoomStore.chatRoomList.filter(item => item.isActive == 1)|| [];
     // 置顶的始终在最前面，同为置顶时id小的排前面
     return [...list].sort((a, b) => {
         // 先按置顶状态排序

@@ -8,6 +8,7 @@ export const useComponentStore = defineStore("component", () => {
     const rightTab = ref('default'); // default | groupManage
     const showInviteDialog = ref(false); // 邀请好友弹窗
     const showKickDialog = ref(false); // 踢出成员弹窗
+    const showAdminDialog = ref(false); // 管理员设置弹窗
 
-    return { showAuthDialog,sideTab, userInfoShow, showGroupManage, rightTab, showInviteDialog, showKickDialog };
+    return { showAuthDialog,sideTab, userInfoShow, showGroupManage, rightTab, showInviteDialog, showKickDialog, showAdminDialog };
 });

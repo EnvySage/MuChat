@@ -183,7 +183,30 @@ export const useChatRoomStore = defineStore("chatRoom", () => {
             ElMessage.error(res.msg);
         }
     }
+
+    const dismissGroup = async (chatRoomId) => {
+        const res = await chat.dismissGroup(chatRoomId);
+        if (res.code == 1) {
+            ElMessage.success("解散成功");
+            await getAllRoom();
+        } else {
+            ElMessage.error(res.msg);
+        }
+    }
+
+    const changeAdmin = async (data) => {
+        const res = await chat.changeAdmin(data);
+        if (res.code == 1) {
+            ElMessage.success(data.isAdmin === 1 ? "设置管理员成功" : "取消管理员成功");
+            await getAllRoom();
+        } else {
+            ElMessage.error(res.msg);
+        }
+        return res;
+    }
+
     return { chatRoomList, currentChatRoom, getAllRoom, currentMessageList, 
         getCurrentMessageList, createChatRoom, reportRead, reportCurrentRead, 
-        updateGroupNickname, inviteMember, kickMember, batchMute, updateGroupInfo, exitGroup};
+        updateGroupNickname, inviteMember, kickMember, batchMute, updateGroupInfo, 
+        exitGroup, dismissGroup, changeAdmin};
 });

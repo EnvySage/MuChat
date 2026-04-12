@@ -16,5 +16,7 @@ export default {
     updateGroupInfo: (data) => http.put('/chatRoom/updateGroupInfo', data),
     batchMute: (data) => http.put('/chatRoom/batchMute', data),
     kickMember: (data) => http.post('/chatRoom/kickGroup', data),
-    exitGroup: (chatRoomId) => http.delete('/chatRoom/exitRoom/' + chatRoomId)
+    exitGroup: (chatRoomId) => http.delete('/chatRoom/exitRoom/' + chatRoomId),
+    dismissGroup: (chatRoomId) => http.delete('/chatRoom/dismissRoom/' + chatRoomId),
+    changeAdmin: (data) => http.put('/chatRoom/changeAdmin', data),
 }
