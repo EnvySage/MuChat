@@ -12,10 +12,12 @@
     "@element-plus/icons-vue": "^2.3.2",
     "ali-oss": "^6.23.0",
     "axios": "^1.13.6",
+    "browser-image-compression": "^2.0.2",
     "element-plus": "^2.13.4",
     "pinia": "^3.0.4",
     "vue": "^3.5.29",
-    "vue-router": "^5.0.3"
+    "vue-router": "^5.0.3",
+    "vue3-emoji-picker": "^1.1.8"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.4",

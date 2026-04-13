@@ -85,15 +85,8 @@ const userInfo = computed(() => {
     }
     return componentStore.userInfoShow
 })
-const contact = computed(() => {
-    return {
-        contactId: userInfo.value.id,
-        contactNickname: userInfo.value.nickname,
-        alias: userInfo.value.nickname,
-    }
-})
 const addContact = async () => {
-    await ContactStore.addContact(contact.value)
+    await ContactStore.requestContact(userInfo.value.id)
 }
 const deleteContact = async () => {
     await ContactStore.deleteContact(userInfo.value.id)

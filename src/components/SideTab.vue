@@ -49,6 +49,11 @@ const options = [
         label: '联系人',
         value: 'contact',
         icon: 'icon-duoren'
+    },
+    {
+        label: '通知',
+        value: 'notice',
+        icon: 'icon-youxiang'
     }
 ]
 // 处理登录成功的回调

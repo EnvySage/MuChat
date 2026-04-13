@@ -48,7 +48,7 @@ class WsClient {
     this.send({ type: "LEAVE_GROUP", chatRoomId });
   }
 
-  sendGroupMessage(chatRoomId, content, contentType = "TEXT", senderId, senderName, senderAvatar,sentAt=Date.now()) {
+  sendGroupMessage(chatRoomId, content, contentType = "TEXT", senderId, senderName, senderAvatar, sentAt = Date.now(), fileName = null, fileSize = null) {
     this.send({
       type: "GROUP",
       chatRoomId,
@@ -57,7 +57,9 @@ class WsClient {
       senderId,
       senderName,
       senderAvatar,
-      sentAt
+      sentAt,
+      fileName,
+      fileSize
     });
   }
 

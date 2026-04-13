@@ -13,7 +13,7 @@
             </div>
             <div class="content">
                 <div class="name">{{ item.name }}</div>
-                <div class="desc">{{item.lastMessageSenderName}}: {{ item.lastMessageContent}}</div>
+                <div class="desc">{{item.lastMessageSenderName}}: {{ formatLastContent(item.lastMessageContent, item.lastMessageContentType) }}</div>
             </div>
             <span v-if="item.unreadCount > 0" class="unread-badge">
                 {{ item.unreadCount > 99 ? '99+' : item.unreadCount }}
@@ -37,6 +37,42 @@ const chatRoomStore = useChatRoomStore()
 const props = defineProps({
     messageList: Array,
 })
+
+/** 格式化聊天室列表中的最后一条消息内容 */
+const formatLastContent = (content, contentType) => {
+    if (!content) return ''
+    // 如果有 contentType 字段，直接按类型映射
+    if (contentType && contentType !== 'TEXT') {
+        const typeLabels = {
+            IMAGE: '[图片]',
+            VIDEO: '[视频]',
+            PDF: '[PDF]',
+            WORD: '[文档]',
+            EXCEL: '[表格]',
+            ZIP: '[压缩包]',
+            FILE: '[文件]',
+        }
+        return typeLabels[contentType] || '[文件]'
+    }
+    // 兜底：如果内容是 JSON 字符串，尝试解析并识别类型
+    if (typeof content === 'string' && content.trim().startsWith('{')) {
+        try {
+            const parsed = JSON.parse(content)
+            if (parsed.url) {
+                // 通过 URL 后缀推断类型
+                const url = parsed.url.toLowerCase()
+                if (/\.(jpg|jpeg|png|gif|bmp|webp|svg)($|\?)/.test(url)) return '[图片]'
+                if (/\.(mp4|avi|mov|wmv|flv|mkv|webm)($|\?)/.test(url)) return '[视频]'
+                if (/\.(pdf)($|\?)/.test(url)) return '[PDF]'
+                if (/\.(doc|docx)($|\?)/.test(url)) return '[文档]'
+                if (/\.(xls|xlsx|csv)($|\?)/.test(url)) return '[表格]'
+                if (/\.(zip|rar|7z|tar|gz)($|\?)/.test(url)) return '[压缩包]'
+                return '[文件]'
+            }
+        } catch { /* 解析失败，返回原始内容 */ }
+    }
+    return content
+}
 
 
 

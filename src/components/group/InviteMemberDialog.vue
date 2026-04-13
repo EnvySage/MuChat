@@ -16,7 +16,7 @@
                     <el-icon>
                         <InfoFilled />
                     </el-icon>
-                    <span>邀请的好友将直接加入群聊</span>
+                    <span>邀请的好友需同意后才会加入群聊</span>
                 </div>
             </div>
 

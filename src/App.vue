@@ -4,12 +4,10 @@ import { useAccountStore } from './stores/AccountStore';
 import { ElMessage } from 'element-plus';
 import { useComponentStore } from './stores/ComponentStore';
 import { wsClient } from './utils/ws';
-import { useOnlineUserStore } from './stores/OnlineUserStore';
-import { useChatRoomStore } from './stores/ChatRoomStore';
+import { registerWsHandlers, unregisterWsHandlers } from './utils/wsHandlers';
+import { useNoticeStore } from './stores/NoticeStore';
 import { Loading as ElemeLoading } from '@element-plus/icons-vue';
 const componentStore = useComponentStore()
-const chatRoomStore = useChatRoomStore()
-const OnlineUserStore = useOnlineUserStore()
 const accountStore = useAccountStore();
 const verifyAuth = async () => {
   try {
@@ -40,6 +38,7 @@ onMounted(async () => {
   await initApp();
 });
 onUnmounted(() => {
+  unregisterWsHandlers();
   wsClient.close();
   accountStore.isLogin = false;
 });
@@ -49,9 +48,10 @@ const initApp = async () => {
   try {
     await verifyAuth();
     accountStore.isLogin = true;
-    wsClient.onMessage(handleOnlineUser)
-    wsClient.onMessage(handleGroupCreated)
+    registerWsHandlers();
     await wsClient.connect(localStorage.getItem('token'));
+    const noticeStore = useNoticeStore();
+    await noticeStore.fetchUnreadCount();
     handleHeartBreak();
   } catch (error) {
     console.error(error, '初始化应用失败')
@@ -61,14 +61,6 @@ const initApp = async () => {
     }, 2000);
     isLoading.value = false
   }
-}
-const handleOnlineUser = (msg) => {
-  if (msg?.type !== 'ONLINE_LIST') return
-  OnlineUserStore.onlineUsers = msg.users
-}
-const handleGroupCreated = (msg) => {
-  if (msg?.type !== 'GROUP_CREATED') return
-  chatRoomStore.chatRoomList.push(msg.chatRoom)
 }
 const handleHeartBreak = () => {
   setInterval(() => {

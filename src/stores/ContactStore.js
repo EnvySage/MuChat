@@ -27,6 +27,20 @@ export const useContactStore = defineStore("contact", () => {
             console.log(err)
         }
     }
+    /** 发送好友邀请（新接口，替代直接添加） */
+    const requestContact = async (contactId) => {
+        try {
+            const res = await chat.requestContact(contactId)
+            if (res.code == 1) {
+                ElMessage.success('好友邀请已发送，等待对方同意')
+            } else {
+                ElMessage.error(res.msg || '邀请发送失败')
+            }
+        } catch (err) {
+            console.log(err)
+            ElMessage.error('邀请发送失败')
+        }
+    }
     const updateContact = async (contact) => {
         try {
             const res = await chat.updateContact(contact)
@@ -59,6 +73,7 @@ export const useContactStore = defineStore("contact", () => {
         contactList,
         getAllContact,
         addContact,
+        requestContact,
         deleteContact
     }
 })

@@ -6,6 +6,7 @@ export default {
     getCurrentMessageList: (roomId,size,beforeTime) => http.get('/msg/list/' + roomId,{size,beforeTime}),
     getAllContact: () => http.get('/contacts/all'),
     addContact: (contact) => http.post('/contacts/add',contact),
+    requestContact: (contactId) => http.post('/contacts/request/' + contactId),
     updateContact: (contact)=> http.put('/contacts/update',contact),
     deleteContact: (contactId) => http.delete('/contacts/delete/' + contactId),
     getOssToken: (params) => http.get('/oss/getOssToken', params),

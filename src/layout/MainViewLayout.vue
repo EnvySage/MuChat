@@ -27,7 +27,6 @@ import UserList from '@/components/UserList.vue';
 import UserInfo from '@/components/UserInfo.vue';
 import GroupManage from '@/components/group/GroupManageDrawer.vue';
 import InviteMemberDialog from '@/components/group/InviteMemberDialog.vue';
-
 const handleInviteSuccess = (userIds) => {
     console.log('邀请成功:', userIds);
     // 可以刷新群成员列表
