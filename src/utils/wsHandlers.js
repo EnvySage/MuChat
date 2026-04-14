@@ -4,6 +4,7 @@ import { useChatRoomStore } from '@/stores/ChatRoomStore'
 import { useOnlineUserStore } from '@/stores/OnlineUserStore'
 import { useNoticeStore } from '@/stores/NoticeStore'
 import { useContactStore } from '@/stores/ContactStore'
+import { useComponentStore } from '@/stores/ComponentStore'
 import { ElMessage } from 'element-plus'
 
 // ========== 工具方法 ==========
@@ -245,6 +246,21 @@ const handlers = {
     const contactStore = useContactStore()
     contactStore.getAllContact()
     ElMessage.info('你已被对方删除好友')
+  },
+
+  /** 挤号通知（其他设备登录） */
+  KICKED(msg) {
+    const reason = msg.reason === 'other_device_login' ? '你的账号已在其他设备登录' : '你已被强制下线'
+    ElMessage.warning(reason)
+    setTimeout(() => {
+      wsClient.close()
+      localStorage.removeItem('token')
+      const accountStore = useAccountStore()
+      const componentStore = useComponentStore()
+      accountStore.user = null
+      accountStore.isLogin = false
+      componentStore.showAuthDialog = true
+    }, 1500)
   }
 }
 

@@ -20,4 +20,6 @@ export default {
     exitGroup: (chatRoomId) => http.delete('/chatRoom/exitRoom/' + chatRoomId),
     dismissGroup: (chatRoomId) => http.delete('/chatRoom/dismissRoom/' + chatRoomId),
     changeAdmin: (data) => http.put('/chatRoom/changeAdmin', data),
+    searchUsers: (keyword) => http.get('/user/search', { keyword }),
+    searchGroups: (keyword) => http.get('/chatRoom/search', { keyword }),
 }

@@ -1,8 +1,12 @@
 <template>
     <div class="title">联系人</div>
+    <div class="search-box">
+        <el-input v-model="searchKeyword" placeholder="搜索联系人" clearable size="default" prefix-icon="Search" />
+    </div>
+
     <el-scrollbar height="100%" @end-reached="loadMoreContact">
         <div class="warn" v-if="contactList.length <= 0">你还没有添加联系人哦</div>
-        <div v-for="item in contactList" :key="item.id" class="scrollbar-demo-item" @click="selectContact(item)">
+        <div v-for="item in filteredList" :key="item.id" class="scrollbar-demo-item" @click="selectContact(item)">
             <div class="avatar">
                 <img :src="item.contactAvatar || defaultImg" alt=""></img>
                 <span
@@ -33,11 +37,12 @@
                 <div class="desc">{{ item.contactDescription }}</div>
             </div>
         </div>
+        <div v-if="filteredList.length === 0 && searchKeyword && contactList.length > 0" class="empty-tip">未找到相关联系人</div>
     </el-scrollbar>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue';
+import { ref, nextTick, computed } from 'vue';
 import defaultImg from '@/assets/default.png'
 import { useOnlineUserStore } from '@/stores/OnlineUserStore';
 import { useComponentStore } from '@/stores/ComponentStore';
@@ -50,6 +55,16 @@ const props = defineProps({
 const emit = defineEmits(['loadMoreContact'])
 
 const OnlineUserStore = useOnlineUserStore();
+
+const searchKeyword = ref('')
+const filteredList = computed(() => {
+    const keyword = searchKeyword.value.trim().toLowerCase()
+    if (!keyword) return props.contactList
+    return props.contactList.filter(item => {
+        const name = (item.alias || item.contactNickname || '').toLowerCase()
+        return name.includes(keyword)
+    })
+})
 
 // 别名编辑状态
 const editingId = ref(null);
@@ -235,5 +250,33 @@ const selectContact = (item) => {
     width: 97%;
     padding:15px;
     margin-bottom: 10px;
+}
+.search-box {
+    width: 97%;
+    margin-bottom: 10px;
+
+    :deep(.el-input__wrapper) {
+        background-color: var(--color-third);
+        box-shadow: none;
+        border-radius: 8px;
+    }
+    :deep(.el-input__inner) {
+        color: white;
+        &::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+    }
+    :deep(.el-input__prefix .el-icon) {
+        color: rgba(255, 255, 255, 0.4);
+    }
+    :deep(.el-input__clear) {
+        color: rgba(255, 255, 255, 0.4);
+    }
+}
+.empty-tip {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    padding: 30px 0;
 }
 </style>

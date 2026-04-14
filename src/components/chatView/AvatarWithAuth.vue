@@ -5,7 +5,7 @@
 
         <!-- 登录注册对话框 -->
         <el-dialog v-model="showAuthDialog" :title="authMode === 'login' ? '登录' : '注册'" width="400px"
-            :close-on-click-modal="false" :close-on-press-escape="false" destroy-on-close append-to-body>
+            :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false" destroy-on-close append-to-body>
 
             <el-form :model="authForm" :rules="authRules" ref="authFormRef" label-width="100px" size="default">
                 <el-form-item label="用户名" prop="nickname">

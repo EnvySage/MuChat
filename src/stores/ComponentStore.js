@@ -9,6 +9,7 @@ export const useComponentStore = defineStore("component", () => {
     const showInviteDialog = ref(false); // 邀请好友弹窗
     const showKickDialog = ref(false); // 踢出成员弹窗
     const showAdminDialog = ref(false); // 管理员设置弹窗
+    const showSearchAddDialog = ref(false); // 搜索添加弹窗
 
-    return { showAuthDialog,sideTab, userInfoShow, showGroupManage, rightTab, showInviteDialog, showKickDialog, showAdminDialog };
+    return { showAuthDialog,sideTab, userInfoShow, showGroupManage, rightTab, showInviteDialog, showKickDialog, showAdminDialog, showSearchAddDialog };
 });

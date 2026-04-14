@@ -1,8 +1,11 @@
 <template>
     <div class="title">消息列表</div>
+    <div class="search-box">
+        <el-input v-model="searchKeyword" placeholder="搜索聊天室" clearable size="default" prefix-icon="Search" />
+    </div>
     <el-scrollbar height="100%" @end-reached="loadMore">
         <div
-            v-for="item in messageList"
+            v-for="item in filteredList"
             :key="item.id"
             class="scrollbar-demo-item"
             :class="{ active: chatRoomStore.currentChatRoom?.id === item.id }"
@@ -22,6 +25,7 @@
                 <img src="@/assets/img/taichi.png" />
             </div>
         </div>
+        <div v-if="filteredList.length === 0 && searchKeyword" class="empty-tip">未找到相关聊天室</div>
     </el-scrollbar>
 </template>
 
@@ -36,6 +40,13 @@ const componentStore = useComponentStore()
 const chatRoomStore = useChatRoomStore()
 const props = defineProps({
     messageList: Array,
+})
+
+const searchKeyword = ref('')
+const filteredList = computed(() => {
+    const keyword = searchKeyword.value.trim().toLowerCase()
+    if (!keyword) return props.messageList
+    return props.messageList.filter(item => item.name?.toLowerCase().includes(keyword))
 })
 
 /** 格式化聊天室列表中的最后一条消息内容 */
@@ -200,5 +211,33 @@ const loadMore = () => {
     width: 97%;
     padding:15px;
     margin-bottom: 10px;
+}
+.search-box {
+    width: 97%;
+    margin-bottom: 10px;
+
+    :deep(.el-input__wrapper) {
+        background-color: var(--color-third);
+        box-shadow: none;
+        border-radius: 8px;
+    }
+    :deep(.el-input__inner) {
+        color: white;
+        &::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+    }
+    :deep(.el-input__prefix .el-icon) {
+        color: rgba(255, 255, 255, 0.4);
+    }
+    :deep(.el-input__clear) {
+        color: rgba(255, 255, 255, 0.4);
+    }
+}
+.empty-tip {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    padding: 30px 0;
 }
 </style>

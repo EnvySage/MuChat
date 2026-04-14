@@ -82,7 +82,7 @@
                                 <span class="emoji-icon">😊</span>
                             </div>
                             <EmojiPicker v-if="showEmoji" @select="onSelectEmoji" :hide-search="false"
-                                :disable-skin-tones="true" class="emoji-picker-popup" @click.stop />
+                                :disable-skin-tones="true" native class="emoji-picker-popup" @click.stop />
 
                             <div class="icon-item" @click="triggerFileUpload">
                                 <svg t="1776064481075" class="icon" viewBox="0 0 1024 1024" version="1.1"
@@ -731,7 +731,7 @@ const openGroupManageDrawer = () => {
                     .notice-name {
                         font-size: 14px;
                         font-weight: 500;
-                        color: #fff;
+                        color: white;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
@@ -746,7 +746,7 @@ const openGroupManageDrawer = () => {
                         margin-left: 8px;
 
                         &[data-status="UNREAD"] {
-                            color: #557afd;
+                            color: #0037ff;
                         }
 
                         &[data-status="READ"] {
@@ -754,7 +754,7 @@ const openGroupManageDrawer = () => {
                         }
 
                         &[data-status="ACCEPTED"] {
-                            color: var(--selected);
+                            color: green;
                         }
 
                         &[data-status="REJECTED"] {
@@ -768,7 +768,7 @@ const openGroupManageDrawer = () => {
 
                     .notice-desc {
                         font-size: 12px;
-                        color: rgba(255, 255, 255, 0.6);
+                        color: rgba(255, 255, 255, 0.9);
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;
@@ -778,7 +778,7 @@ const openGroupManageDrawer = () => {
 
                     .notice-time {
                         font-size: 11px;
-                        color: rgba(255, 255, 255, 0.3);
+                        color: rgba(255, 255, 255, 0.8);
                         white-space: nowrap;
                         flex-shrink: 0;
                         margin-left: 8px;

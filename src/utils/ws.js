@@ -73,4 +73,4 @@ class WsClient {
   }
 }
 
-export const wsClient = new WsClient("ws://localhost:7091/");
+export const wsClient = new WsClient(import.meta.env.VITE_WS_URL);

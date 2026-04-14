@@ -1,9 +1,12 @@
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 import account from '@/api/account'
+import { wsClient } from '@/utils/ws'
+import { useAccountStore } from '@/stores/AccountStore'
+import { useComponentStore } from '@/stores/ComponentStore'
 // 创建 axios 实例
 const service = axios.create({
-  baseURL: 'http://localhost:7090/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json;charset=utf-8'
@@ -89,6 +92,17 @@ service.interceptors.response.use(
         case 401:
           ElMessage.error('登录已过期，请重新登录')
           break
+        case 4011: {
+          localStorage.removeItem('token')
+          const accountStore = useAccountStore()
+          const componentStore = useComponentStore()
+          accountStore.user = null
+          accountStore.isLogin = false
+          wsClient.close()
+          ElMessage.error('您的账号在其他设备登录')
+          componentStore.showAuthDialog = true
+          break
+        }
         case 403:
           ElMessage.error('拒绝访问')
           break

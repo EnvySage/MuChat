@@ -16,10 +16,14 @@
         </div>
         <div class="down">
             <div class="related-link">
+                <span class="iconfont icon-tianjiajiahaowubiankuang" style="font-weight: bold;" @click="handleAdd"></span>
+                <span class="iconfont icon-tuichu" @click="handleLogout"></span>
                 <span class="iconfont icon-github"></span>
                 <span class="iconfont icon-bilibili"></span>
+                
             </div>
         </div>
+        <SearchAddDialog />
     </div>
 </template>
 
@@ -27,8 +31,10 @@
 import { useAccountStore } from '@/stores/AccountStore'
 import { computed, ref,watch } from 'vue'
 import AvatarWithAuth from '@/components/chatView/AvatarWithAuth.vue' // 引入组件
+import SearchAddDialog from '@/components/SearchAddDialog.vue'
 import defaultImg from '@/assets/default.png'
 import { useComponentStore } from '@/stores/ComponentStore'
+import { wsClient } from '@/utils/ws'
 const componentStore = useComponentStore()
 const accountStore = useAccountStore()
 const avatar = computed(() => accountStore.user?.avatar || defaultImg)
@@ -66,6 +72,20 @@ const handleLoginSuccess = (formData) => {
 const handleRegisterSuccess = (formData) => {
     console.log('注册成功', formData)
     // 这里可以处理注册成功后的逻辑
+}
+
+// 退出登录
+const handleLogout = () => {
+    wsClient.close()
+    localStorage.removeItem('token')
+    accountStore.user = null
+    accountStore.isLogin = false
+    window.location.reload()
+}
+
+// 打开搜索添加弹窗
+const handleAdd = () => {
+    componentStore.showSearchAddDialog = true
 }
 </script>
 
@@ -115,5 +135,7 @@ const handleRegisterSuccess = (formData) => {
 .iconfont {
     font-size: 30px;
     color: var(--color-last);
+
 }
+
 </style>

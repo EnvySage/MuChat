@@ -1,12 +1,34 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useAccountStore } from './stores/AccountStore';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { useComponentStore } from './stores/ComponentStore';
 import { wsClient } from './utils/ws';
 import { registerWsHandlers, unregisterWsHandlers } from './utils/wsHandlers';
 import { useNoticeStore } from './stores/NoticeStore';
 import { Loading as ElemeLoading } from '@element-plus/icons-vue';
+
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  const ua = navigator.userAgent
+  const mobileReg = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i
+  if (mobileReg.test(ua) || window.innerWidth < 768) {
+    isMobile.value = true
+    ElMessageBox.alert(
+      '当前应用为桌面端设计，移动端体验不佳，请使用电脑访问以获得最佳体验。',
+      '提示',
+      {
+        confirmButtonText: '我知道了',
+        type: 'warning',
+        showClose: false,
+        closeOnClickModal: false,
+        closeOnPressEscape: false,
+      }
+    )
+  }
+}
+
 const componentStore = useComponentStore()
 const accountStore = useAccountStore();
 const verifyAuth = async () => {
@@ -35,6 +57,7 @@ const verifyAuth = async () => {
 }
 
 onMounted(async () => {
+  checkMobile();
   await initApp();
 });
 onUnmounted(() => {
@@ -73,7 +96,14 @@ const handleHeartBreak = () => {
 </script>
 
 <template>
-  <div class="app-bg">
+  <!-- 移动端提示遮罩 -->
+  <div v-if="isMobile" class="mobile-overlay">
+    <div class="mobile-tip">
+      <h2>请使用电脑访问</h2>
+      <p>当前应用为桌面端设计，移动端体验不佳，请使用电脑访问以获得最佳体验。</p>
+    </div>
+  </div>
+  <div v-else class="app-bg">
     <div class="mainContent">
       <!-- 显示加载界面 -->
       <div v-if="isLoading || (animationDelay)" class="loading-container">
@@ -89,6 +119,47 @@ const handleHeartBreak = () => {
 </template>
 
 <style scoped>
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--color-primary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.mobile-tip {
+  text-align: center;
+  color: #fff;
+  padding: 40px 30px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  max-width: 320px;
+}
+
+.mobile-tip .mobile-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.mobile-tip h2 {
+  font-size: 22px;
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.mobile-tip p {
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.9;
+  margin: 0;
+}
+
 .app-bg {
   background-image: url('@/assets/img/app-bg.jpg');
   background-size: cover;
