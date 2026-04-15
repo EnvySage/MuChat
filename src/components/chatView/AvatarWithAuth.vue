@@ -8,8 +8,8 @@
             :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false" destroy-on-close append-to-body>
 
             <el-form :model="authForm" :rules="authRules" ref="authFormRef" label-width="100px" size="default">
-                <el-form-item label="用户名" prop="nickname">
-                    <el-input v-model="authForm.nickname" placeholder="请输入用户名" @keyup.enter="submitAuth" />
+                <el-form-item label="邮箱" prop="email">
+                    <el-input v-model="authForm.email" placeholder="请输入邮箱" @keyup.enter="submitAuth" />
                 </el-form-item>
 
                 <el-form-item label="密码" prop="password">
@@ -228,12 +228,14 @@ const submitEmail = async () => {
     }
 };// 提交认证
 const submitAuth = async () => {
-    authForm.email = email.value
+    if (authMode.value === 'register') {
+        authForm.email = email.value
+    }
     try {
         // 根据当前模式确定要验证的字段
         let fieldsToValidate = [];
         if (authMode.value === 'login') {
-            fieldsToValidate = ['nickname', 'password', 'loginCode'];
+            fieldsToValidate = ['email', 'password', 'loginCode'];
         } else {
             fieldsToValidate = ['nickname', 'email', 'password', 'confirmPassword', 'emailCode'];
         }
@@ -255,6 +257,7 @@ const submitAuth = async () => {
                 ElMessage.error('用户已存在')
             } else {
                 ElMessage.success('注册成功！')
+                authMode.value = 'login'
                 emit('register-success', authForm)
             }
 

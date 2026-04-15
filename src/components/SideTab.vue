@@ -18,8 +18,8 @@
             <div class="related-link">
                 <span class="iconfont icon-tianjiajiahaowubiankuang" style="font-weight: bold;" @click="handleAdd"></span>
                 <span class="iconfont icon-tuichu" @click="handleLogout"></span>
-                <span class="iconfont icon-github"></span>
-                <span class="iconfont icon-bilibili"></span>
+                <span class="iconfont icon-github" @click="handleGithub"></span>
+                <span class="iconfont icon-bilibili" @click="handleBilibili"></span>
                 
             </div>
         </div>
@@ -86,6 +86,12 @@ const handleLogout = () => {
 // 打开搜索添加弹窗
 const handleAdd = () => {
     componentStore.showSearchAddDialog = true
+}
+const handleGithub = () => {
+    window.open('https://github.com/EnvySage/MuChat', '_blank')
+}
+const handleBilibili = () => {
+    window.open('https://space.bilibili.com/319154045?spm_id_from=333.1007.0.0', '_blank')
 }
 </script>
 

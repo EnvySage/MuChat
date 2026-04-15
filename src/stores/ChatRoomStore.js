@@ -130,6 +130,14 @@ export const useChatRoomStore = defineStore("chatRoom", () => {
         const res = await chat.updateGroupNickname(data);
         if (res.code == 1) {
             ElMessage.success("修改成功");
+            // 更新本地members中的roomName，使视图立即响应
+            const members = currentChatRoom.value?.members;
+            const member = members?.find(m => m.userId === data.userId);
+            if (member) {
+                member.roomName = data.roomName;
+                // 替换整个currentChatRoom触发响应式更新
+                currentChatRoom.value = { ...currentChatRoom.value, members: [...members] };
+            }
         } else {
             ElMessage.error(res.msg);
         }

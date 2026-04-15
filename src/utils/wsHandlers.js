@@ -71,6 +71,7 @@ const handlers = {
         : '[文件]'
       room.lastMessageContent = displayContent
       room.lastMessageSenderName = source.senderName || room.lastMessageSenderName
+      room.lastMessageSenderId = source.senderId || room.lastMessageSenderId
       room.lastMessageTime = source.sentAt
     }
 

@@ -25,7 +25,7 @@
                         </div>
                         <div class="box">
                             <div class="content">
-                                <div class="name">{{ item.senderName }}</div>
+                                <div class="name">{{ getDisplayName(item) }}</div>
                                 <!-- 文本消息 -->
                                 <div v-if="!item.contentType || item.contentType === 'TEXT'" class="bubble">{{
                                     item.content }}</div>
@@ -72,7 +72,7 @@
                         <div class="input-box">
                             <textarea ref="textareaRef" v-model="message" placeholder="请输入消息..."
                                 @input="adjustTextareaHeight" @keydown.enter.exact.prevent="sendMessage"
-                                @keydown.shift.enter="insertNewline" class="auto-resize-textarea" />
+                                @keydown.shift.enter="insertNewline" @paste="handlePaste" class="auto-resize-textarea" />
                             <button @click="sendMessage" class="send-button">发送</button>
                         </div>
 
@@ -362,7 +362,29 @@ const handleFileSelected = async (event) => {
     const file = event.target.files?.[0]
     if (!file) return
     event.target.value = ''
+    await uploadAndSendFile(file)
+}
 
+/** 粘贴图片发送 */
+const handlePaste = async (event) => {
+    const items = event.clipboardData?.items
+    if (!items) return
+    for (const item of items) {
+        if (item.type.startsWith('image/')) {
+            event.preventDefault()
+            const file = item.getAsFile()
+            if (file) {
+                // 重命名剪贴板图片，给一个默认文件名
+                const namedFile = new File([file], `paste_${Date.now()}.png`, { type: file.type })
+                await uploadAndSendFile(namedFile)
+            }
+            return
+        }
+    }
+}
+
+/** 上传文件并发送消息（从 handleFileSelected 抽取） */
+const uploadAndSendFile = async (file) => {
     if (!chatRoomStore.currentChatRoom?.id) {
         ElMessage.warning('请先选择聊天室')
         return
@@ -375,7 +397,6 @@ const handleFileSelected = async (event) => {
     uploading.value = true
 
     try {
-        // ① 判断文件类型 & 大小校验
         const contentType = getContentTypeByFile(file)
         const { valid, limit, actual } = validateFileSize(file, contentType)
         if (!valid) {
@@ -383,27 +404,22 @@ const handleFileSelected = async (event) => {
             return
         }
 
-        // ② 图片压缩
         let fileToUpload = file
         if (contentType === 'IMAGE') {
             const result = await compressImage(file)
             fileToUpload = result.file
-            // 压缩后再次校验大小
             if (fileToUpload.size > limit) {
                 ElMessage.warning(`图片压缩后仍超过 ${formatFileSize(limit)}，无法上传`)
                 return
             }
         }
 
-        // ③④ 使用 ossUploader 工具类上传
         const fileUrl = await ossUploader.upload(fileToUpload, {
             type: 'chat-file',
             targetId: chatRoomStore.currentChatRoom.id
         })
 
-        // ⑤ 构建 content 并发送消息
         let contentObj = { url: fileUrl }
-
         if (contentType === 'IMAGE') {
             try {
                 const dims = await getImageDimensions(fileToUpload)
@@ -415,7 +431,6 @@ const handleFileSelected = async (event) => {
         }
 
         const contentStr = JSON.stringify(contentObj)
-
         wsClient.sendGroupMessage(
             chatRoomStore.currentChatRoom.id,
             contentStr,
@@ -428,7 +443,7 @@ const handleFileSelected = async (event) => {
             fileToUpload.size
         )
     } catch (err) {
-        console.error('[handleFileSelected] 上传失败:', err)
+        console.error('[uploadAndSendFile] 上传失败:', err)
         ElMessage.error('文件上传失败，请重试')
     } finally {
         uploading.value = false
@@ -550,6 +565,11 @@ watch(sideTab, (tab) => {
 const currentChatRoom = computed(() => {
     return chatRoomStore.currentChatRoom;
 })
+
+const getDisplayName = (item) => {
+    const member = currentChatRoom.value?.members?.find(m => m.userId === item.senderId)
+    return member?.roomName || item.senderName
+}
 
 watch(currentChatRoom, (val) => {
     if (val === null) {

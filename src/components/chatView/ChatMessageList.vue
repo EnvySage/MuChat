@@ -16,7 +16,7 @@
             </div>
             <div class="content">
                 <div class="name">{{ item.name }}</div>
-                <div class="desc">{{item.lastMessageSenderName}}: {{ formatLastContent(item.lastMessageContent, item.lastMessageContentType) }}</div>
+                <div class="desc">{{ getSenderDisplayName(item) }}: {{ formatLastContent(item.lastMessageContent, item.lastMessageContentType) }}</div>
             </div>
             <span v-if="item.unreadCount > 0" class="unread-badge">
                 {{ item.unreadCount > 99 ? '99+' : item.unreadCount }}
@@ -38,6 +38,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import defaultImg from '@/assets/default.png'
 const componentStore = useComponentStore()
 const chatRoomStore = useChatRoomStore()
+
+const getSenderDisplayName = (item) => {
+    const member = item.members?.find(m => m.nickname === item.lastMessageSenderName || m.userId === item.lastMessageSenderId)
+    return member?.roomName || item.lastMessageSenderName
+}
 const props = defineProps({
     messageList: Array,
 })
